@@ -13,6 +13,7 @@ th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
 th { background: #eee; }
 input, select, button { width: 100%; padding: 6px; margin: 5px 0; }
 button { cursor: pointer; }
+.editable { background: #fffbe6; }
 </style>
 </head>
 
@@ -61,12 +62,13 @@ button { cursor: pointer; }
 
 <hr>
 
-<h3>📊 Tồn kho (trên web)</h3>
+<h3>📊 TỒN KHO (click để sửa)</h3>
 <table>
   <thead>
     <tr>
       <th>Vật tư</th>
       <th>Số lượng</th>
+      <th>Lưu</th>
     </tr>
   </thead>
   <tbody id="mainTable"></tbody>
@@ -80,15 +82,30 @@ const API_URL = "https://script.google.com/macros/s/AKfycbz0C6y89gmcTOK3mtJt52UN
 let inventory = [];
 let temp = [];
 
+/* ================== LOAD KHI MỞ WEB ================== */
+window.onload = loadInventory;
+
 /* ================== RENDER ================== */
 function render() {
   itemSelect.innerHTML = "";
   mainTable.innerHTML = "";
   tempTable.innerHTML = "";
 
-  inventory.forEach((item, index) => {
-    itemSelect.innerHTML += `<option value="${index}">${item.name}</option>`;
-    mainTable.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td></tr>`;
+  inventory.forEach((item, i) => {
+    itemSelect.innerHTML += `<option value="${i}">${item.name}</option>`;
+
+    mainTable.innerHTML += `
+      <tr>
+        <td>${item.name}</td>
+        <td>
+          <input class="editable" type="number" value="${item.qty}"
+            onchange="inventory[${i}].qty = Number(this.value)">
+        </td>
+        <td>
+          <button onclick="saveEdit(${i})">💾</button>
+        </td>
+      </tr>
+    `;
   });
 
   temp.forEach((t, i) => {
@@ -108,7 +125,19 @@ function removeTemp(i) {
   render();
 }
 
-/* ================== POST KHÔNG CORS ================== */
+/* ================== LOAD TỒN KHO ================== */
+async function loadInventory() {
+  try {
+    const res = await fetch(API_URL + "?action=getInventory");
+    inventory = await res.json();
+    render();
+  } catch (e) {
+    alert("❌ Không tải được tồn kho");
+    console.error(e);
+  }
+}
+
+/* ================== POST ================== */
 async function postToSheet(payload) {
   const formData = new FormData();
   formData.append("data", JSON.stringify(payload));
@@ -126,23 +155,15 @@ async function addItem() {
   const name = newName.value.trim();
   const qty = Number(newQty.value);
 
-  if (!name || qty <= 0) {
-    alert("Thiếu dữ liệu");
-    return;
-  }
+  if (!name || qty <= 0) return alert("Thiếu dữ liệu");
 
   inventory.push({ name, qty });
   render();
 
-  try {
-    await postToSheet({
-      note: "Thêm vật tư mới",
-      items: [{ name, sign: "+", qty }]
-    });
-  } catch (e) {
-    alert("❌ Lỗi kết nối Sheet");
-    console.error(e);
-  }
+  await postToSheet({
+    note: "Thêm vật tư mới",
+    items: [{ name, sign: "+", qty }]
+  });
 
   newName.value = "";
   newQty.value = "";
@@ -150,18 +171,9 @@ async function addItem() {
 
 /* ================== THÊM TẠM ================== */
 function addTemp() {
-  if (inventory.length === 0) {
-    alert("Chưa có vật tư");
-    return;
-  }
-
   const idx = itemSelect.value;
   const q = Number(qty.value);
-
-  if (q <= 0) {
-    alert("Sai số lượng");
-    return;
-  }
+  if (q <= 0) return alert("Sai số lượng");
 
   temp.push({
     name: inventory[idx].name,
@@ -175,50 +187,35 @@ function addTemp() {
   render();
 }
 
-/* ================== LƯU VÀO SHEET ================== */
+/* ================== LƯU NHẬP / XUẤT ================== */
 async function saveToSheet() {
-  if (temp.length === 0) {
-    alert("Chưa có dữ liệu");
-    return;
-  }
+  if (temp.length === 0) return alert("Chưa có dữ liệu");
 
-  temp.forEach(t => {
-    const item = inventory.find(i => i.name === t.name);
-    if (item) {
-      item.qty += (t.sign === "+" ? t.qty : -t.qty);
-    }
+  await postToSheet({
+    note: logNote.value,
+    items: temp
   });
-
-  try {
-    await postToSheet({
-      note: logNote.value,
-      items: temp
-    });
-    alert("✅ Đã lưu vào Google Sheet");
-  } catch (e) {
-    alert("❌ Lỗi kết nối Google Sheet");
-    console.error(e);
-    return;
-  }
 
   temp = [];
   logNote.value = "";
-  render();
-}
-  async function loadInventory() {
-  try {
-    const res = await fetch(API_URL + "?action=getInventory");
-    inventory = await res.json();
-    render();
-  } catch (e) {
-    alert("❌ Không tải được tồn kho từ Google Sheet");
-    console.error(e);
-  }
+  await loadInventory();
+  alert("✅ Đã cập nhật kho");
 }
 
+/* ================== LƯU SỬA TỒN KHO ================== */
+async function saveEdit(i) {
+  const item = inventory[i];
+
+  await postToSheet({
+    note: "Chỉnh sửa tồn kho trực tiếp",
+    items: [{ name: item.name, sign: "+", qty: item.qty }]
+  });
+
+  alert("✅ Đã cập nhật");
+  await loadInventory();
+}
 </script>
 
 </body>
 </html>
-
 
