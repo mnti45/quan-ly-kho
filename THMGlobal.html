@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -13,6 +13,7 @@ body{
 
 h1{text-align:center}
 
+/* ===== LAYOUT ===== */
 .container{
   display:flex;
   gap:24px;
@@ -28,58 +29,65 @@ h1{text-align:center}
   min-width:320px;
 }
 
-/* LOGIN */
-.role-box{
-  text-align:center;
-}
-.role-box button{
-  font-size:22px;
-  padding:18px;
-  margin-top:16px;
-}
+/* ===== LOGIN ===== */
+.role-box{text-align:center}
+.role-box button{font-size:22px;padding:18px;margin-top:16px}
 
-/* INPUT */
+/* ===== INPUT ===== */
 select,input,textarea{
   width:100%;
-  font-size:20px;
-  padding:14px;
+  font-size:18px;
+  padding:12px;
   margin-bottom:14px;
   border-radius:10px;
   border:2px solid #ddd;
 }
+
 .qty-input{
-  width:90px;
+  width:80px;
   text-align:center;
   font-weight:bold;
 }
-.note-textarea{
-  resize:none;
-}
 
-/* BUTTON */
+.note-textarea{resize:none}
+
+/* ===== BUTTON ===== */
 button{
-  width:100%;
-  padding:14px;
-  font-size:20px;
-  font-weight:bold;
   border:none;
   border-radius:10px;
   background:#007bff;
   color:#fff;
   cursor:pointer;
 }
+
 button:hover{background:#0056b3}
 
-/* TABLE */
-table{
-  width:100%;
-  border-collapse:collapse;
+.btn-center{text-align:center}
+
+.btn-compact{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:10px 20px;
+  font-size:15px;
+  font-weight:600;
+  border-radius:10px;
+  background:#0d6efd;
+  color:#fff;
+  margin-top:10px;
 }
+
+.btn-compact:hover{background:#0b5ed7}
+
+/* ===== TABLE ===== */
+table{width:100%;border-collapse:collapse}
+
 th{
   background:#007bff;
   color:white;
   padding:12px;
 }
+
 td{
   padding:12px;
   text-align:center;
@@ -89,13 +97,71 @@ td{
 .temp-import{background:#e8fff1}
 .temp-export{background:#ffecec}
 
+/* ===== HISTORY ===== */
 .history-group{
   background:#f0f4ff;
   cursor:pointer;
   font-weight:bold;
 }
 
-/* ẨN */
+.history-group:hover{background:#dbe4ff}
+
+/* ===== HISTORY DETAIL ===== */
+.history-detail{
+  background:#f5f6f8;
+  padding:16px;
+  font-size:14px;
+  border-left:5px solid #007bff;
+  animation:fadeIn .25s ease;
+}
+
+.history-detail table{
+  width:92%;
+  margin-left:24px;
+  background:#f9fafb;
+  border-radius:8px;
+}
+
+.history-detail th{
+  background:#e9ecef;
+  color:#555;
+  font-size:12px;
+  padding:8px;
+}
+
+.history-detail td{
+  font-size:13px;
+  padding:8px;
+}
+
+/* highlight */
+.changed{
+  background:#fff9db !important;
+  border-color:#ffd43b !important;
+}
+
+/* edit button */
+.edit-actions{text-align:right;padding-top:8px}
+
+.btn-edit{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 14px;
+  font-size:13px;
+  background:#f1f3f5;
+  color:#555;
+  border:1px solid #ced4da;
+  border-radius:6px;
+}
+
+.btn-edit:hover{background:#e9ecef;color:#222}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(-5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
 .hidden{display:none}
 </style>
 </head>
@@ -104,87 +170,77 @@ td{
 
 <h1>VẬT TƯ KHO PHÚ MỸ</h1>
 
-<!-- ================== CHỌN VAI TRÒ ================== -->
+<!-- ===== LOGIN ===== -->
 <div id="roleSelect" class="container">
   <div class="box role-box">
-    <h2> ADMIN</h2>
+    <h2>ADMIN</h2>
     <input id="adminPass" type="password" placeholder="Mật khẩu admin">
-    <button onclick="loginAdmin()">ĐĂNG NHẬP</button>
+    <button class="btn-compact" onclick="loginAdmin()">ĐĂNG NHẬP</button>
   </div>
 
   <div class="box role-box">
-    <h2> USER</h2>
-    <p>Xem vật tư & lịch sử nhập xuất</p>
-    <button onclick="loginUser()">VÀO XEM</button>
+    <h2>USER</h2>
+    <p>Xem vật tư & lịch sử</p>
+    <button class="btn-compact" onclick="loginUser()">VÀO XEM</button>
   </div>
 </div>
 
-<!-- ================== ADMIN AREA ================== -->
+<!-- ===== ADMIN ===== -->
 <div id="adminArea" class="hidden">
-
 <div class="container">
 
-  <!-- NHẬP / XUẤT -->
-  <div class="box">
-    <h3>🔄 NHẬP / XUẤT</h3>
-    <select id="itemSelect"></select>
-    <select id="sign">
-      <option value="+">➕ NHẬP</option>
-      <option value="-">➖ XUẤT</option>
-    </select>
-    <input id="qty" type="number" class="qty-input" placeholder="SL">
-    <textarea id="noteLine" class="note-textarea" placeholder="Ghi chú"></textarea>
-    <button onclick="addTemp()">➕ THÊM VÀO DANH SÁCH TẠM</button>
-  </div>
-
-  <!-- DANH SÁCH TẠM -->
-  <div class="box">
-    <h3>📋 DANH SÁCH TẠM</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Vật tư</th>
-          <th>Nhập/Xuất</th>
-          <th>Ghi chú</th>
-          <th>Xóa</th>
-        </tr>
-      </thead>
-      <tbody id="tempTable"></tbody>
-    </table>
-    <textarea id="logNote" class="note-textarea" placeholder="Ghi chú chung"></textarea>
-    <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
-  </div>
-
+<div class="box">
+<h3>🔄 NHẬP / XUẤT</h3>
+<select id="itemSelect"></select>
+<select id="sign">
+<option value="+">➕ NHẬP</option>
+<option value="-">➖ XUẤT</option>
+</select>
+<input id="qty" type="number" class="qty-input" placeholder="SL">
+<textarea id="noteLine" placeholder="Ghi chú"></textarea>
+<div class="btn-center">
+<button class="btn-compact" onclick="addTemp()">➕ Thêm vào DS tạm</button>
+</div>
 </div>
 
-</div>
-
-<!-- ================== USER + ADMIN CHUNG ================== -->
-<div id="viewArea" class="hidden">
-
-<h3> VẬT TƯ HIỆN TẠI</h3>
+<div class="box">
+<h3>📋 DANH SÁCH TẠM</h3>
 <table>
-  <thead><tr><th>Vật tư</th><th>Số lượng</th></tr></thead>
-  <tbody id="mainTable"></tbody>
+<thead>
+<tr><th>Vật tư</th><th>Nhập/Xuất</th><th>Ghi chú</th><th>Xóa</th></tr>
+</thead>
+<tbody id="tempTable"></tbody>
+</table>
+<textarea id="logNote" placeholder="Ghi chú chung"></textarea>
+<div class="btn-center">
+<button class="btn-compact" onclick="saveToSheet()">💾 Lưu vào kho</button>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ===== VIEW ===== -->
+<div id="viewArea" class="hidden">
+<h3>VẬT TƯ HIỆN TẠI</h3>
+<table>
+<thead><tr><th>Vật tư</th><th>Số lượng</th></tr></thead>
+<tbody id="mainTable"></tbody>
 </table>
 
 <h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
 <table>
-  <thead>
-    <tr><th>Thời gian</th><th>Loại</th><th>Chi tiết</th></tr>
-  </thead>
-  <tbody id="historyTable"></tbody>
+<thead><tr><th>Thời gian</th><th>Loại</th><th>Chi tiết</th></tr></thead>
+<tbody id="historyTable"></tbody>
 </table>
-
 </div>
 
 <script>
 const API_URL="https://script.google.com/macros/s/AKfycbxduYVlwx2reJLXTD-mvCHyKshrXZvHWxkK-gWcf6Iy74MRhheN4TwX2XLUzDD6rhMeMQ/exec";
 
-let inventory=[],temp=[],history=[];
-let isAdmin=false;
+let inventory=[],temp=[],history=[],isAdmin=false;
 
-/* LOGIN */
+/* ===== LOGIN ===== */
 function loginAdmin(){
   if(adminPass.value!=="1234") return alert("Sai mật khẩu");
   isAdmin=true;
@@ -201,13 +257,13 @@ function loginUser(){
   init();
 }
 
-/* INIT */
+/* ===== INIT ===== */
 async function init(){
   await loadInventory();
   await loadHistory();
 }
 
-/* INVENTORY */
+/* ===== INVENTORY ===== */
 function renderInventory(){
   if(isAdmin){
     itemSelect.innerHTML="";
@@ -215,14 +271,13 @@ function renderInventory(){
       itemSelect.innerHTML+=`<option value="${idx}">${i.name}</option>`;
     });
   }
-
   mainTable.innerHTML="";
   inventory.forEach(i=>{
     mainTable.innerHTML+=`<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
   });
 }
 
-/* TEMP */
+/* ===== TEMP ===== */
 function renderTemp(){
   if(!isAdmin) return;
   tempTable.innerHTML="";
@@ -237,80 +292,63 @@ function renderTemp(){
   });
 }
 
-/* HISTORY */
-function renderHistory() {
-  historyTable.innerHTML = "";
+/* ===== HISTORY ===== */
+function renderHistory(){
+  historyTable.innerHTML="";
+  history.forEach((g,idx)=>{
+    historyTable.innerHTML+=`
+    <tr class="history-group" onclick="toggle(${idx})">
+      <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
+      <td>${g.items[0].type}</td>
+      <td>${g.items.map(i=>i.name+": "+i.qty).join(" | ")}</td>
+    </tr>
 
-  history.forEach((g, idx) => {
-    const detail = g.items.map(i => `${i.name}: ${i.qty}`).join(" | ");
+    <tr id="h${idx}" style="display:none">
+      <td colspan="3" class="history-detail">
+        <table>
+          <tr><th>Vật tư</th><th>Số lượng</th><th>Ghi chú</th></tr>
 
-    historyTable.innerHTML += `
-      <tr class="history-group" onclick="toggle(${idx})">
-        <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-        <td>${g.items[0].type}</td>
-        <td>${detail}</td>
-      </tr>
+          ${g.items.map((it,j)=>`
+          <tr>
+            <td>${it.name}</td>
+            <td>
+              ${
+                isAdmin
+                ? `<input class="qty-input" value="${it.qty}"
+                   onchange="this.classList.add('changed');history[${idx}].items[${j}].qty=+this.value">`
+                : `<b>${it.qty}</b>`
+              }
+            </td>
+            <td>
+              ${
+                isAdmin
+                ? `<textarea onchange="this.classList.add('changed');history[${idx}].items[${j}].note=this.value">${it.note||""}</textarea>`
+                : (it.note||"")
+              }
+            </td>
+          </tr>`).join("")}
 
-      <tr id="h${idx}" style="display:none">
-        <td colspan="3">
-          <table width="100%">
-            <tr>
-              <th>Vật tư</th>
-              <th>Số lượng</th>
-              <th>Ghi chú</th>
-            </tr>
-
-            ${g.items.map((it,j)=>`
-              <tr>
-                <td>${it.name}</td>
-
-                <td>
-                  ${
-                    isAdmin
-                    ? `<input type="number" class="qty-input"
-                        value="${it.qty}"
-                        onchange="history[${idx}].items[${j}].qty = Number(this.value)">`
-                    : `<b>${it.qty}</b>`
-                  }
+          ${
+            isAdmin
+            ? `<tr>
+                <td colspan="3" class="edit-actions">
+                  <button class="btn-edit" onclick="saveHistory(${idx})">💾 Lưu chỉnh sửa</button>
                 </td>
-
-                <td>
-                  ${
-                    isAdmin
-                    ? `<textarea class="note-textarea"
-                        onchange="history[${idx}].items[${j}].note = this.value">${it.note||""}</textarea>`
-                    : (it.note || "")
-                  }
-                </td>
-              </tr>
-            `).join("")}
-
-            ${
-              isAdmin
-              ? `<tr>
-                  <td colspan="3">
-                    <button onclick="saveHistory(${idx})">
-                      💾 LƯU CHỈNH SỬA
-                    </button>
-                  </td>
-                </tr>`
-              : ``
-            }
-
-          </table>
-        </td>
-      </tr>
-    `;
+              </tr>`
+            : ``
+          }
+        </table>
+      </td>
+    </tr>`;
   });
 }
-
 
 function toggle(i){
   const el=document.getElementById("h"+i);
   el.style.display=el.style.display==="none"?"":"none";
 }
 
-/* LOAD */
+/* ===== LOAD ===== */
 async function loadInventory(){
   inventory=await fetch(API_URL+"?action=getInventory").then(r=>r.json());
   renderInventory();
@@ -320,12 +358,12 @@ async function loadHistory(){
   renderHistory();
 }
 
-/* ACTION ADMIN */
+/* ===== ADMIN ACTION ===== */
 function addTemp(){
   temp.push({
     name:inventory[itemSelect.value].name,
     sign:sign.value,
-    qty:Number(qty.value),
+    qty:+qty.value,
     note:noteLine.value
   });
   qty.value="";noteLine.value="";
@@ -333,33 +371,25 @@ function addTemp(){
 }
 
 async function saveToSheet(){
-  await fetch(API_URL,{method:"POST",body:JSON.stringify({items:temp,note:logNote.value})});
+  await fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({items:temp,note:logNote.value})
+  });
   temp=[];logNote.value="";
   await init();
   alert("Đã lưu");
 }
-  async function saveHistory(index) {
-  if (!confirm("Bạn chắc chắn muốn chỉnh sửa lịch sử này?")) return;
 
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "editHistory",
-      group: history[index]
-    })
+async function saveHistory(i){
+  if(!confirm("Lưu chỉnh sửa?"))return;
+  await fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"editHistory",group:history[i]})
   });
-
-  await loadInventory();
-  await loadHistory();
-
-  alert("✅ Đã cập nhật lại lịch sử & tồn kho");
+  await init();
+  alert("Đã cập nhật");
 }
-
 </script>
 
 </body>
 </html>
-
-
-
-
