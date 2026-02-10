@@ -11,9 +11,7 @@ body {
   background: #f3f6fb;
 }
 
-h1 {
-  margin-bottom: 20px;
-}
+h1 { margin-bottom: 20px; }
 
 .container {
   display: flex;
@@ -32,19 +30,36 @@ h1 {
 
 /* INPUT TO – RÕ */
 select,
-input {
+input,
+textarea {
   width: 100%;
   font-size: 20px;
   padding: 14px;
   margin-bottom: 14px;
   border-radius: 10px;
   border: 2px solid #ddd;
+  resize: none;
 }
 
 select:focus,
-input:focus {
+input:focus,
+textarea:focus {
   border-color: #007bff;
   outline: none;
+}
+
+/* INPUT RIÊNG */
+.qty-input {
+  width: 90px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 44px;
+  line-height: 1.4;
+  overflow: hidden;
 }
 
 /* BUTTON */
@@ -60,9 +75,7 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #0056b3;
-}
+button:hover { background: #0056b3; }
 
 /* TABLE */
 table {
@@ -83,25 +96,18 @@ td {
   font-size: 18px;
   text-align: center;
   border-bottom: 1px solid #eee;
+  vertical-align: top;
 }
 
-/* DANH SÁCH TẠM */
-.temp-import {
-  background: #e8fff1;
-}
-
-.temp-export {
-  background: #ffecec;
-}
+/* TEMP */
+.temp-import { background: #e8fff1; }
+.temp-export { background: #ffecec; }
 
 .temp-action button {
   background: #dc3545;
   font-size: 18px;
 }
-
-.temp-action button:hover {
-  background: #b52a37;
-}
+.temp-action button:hover { background: #b52a37; }
 
 /* HISTORY */
 .history-group {
@@ -109,10 +115,7 @@ td {
   cursor: pointer;
   font-weight: bold;
 }
-
-.history-detail {
-  background: #fff;
-}
+.history-detail { background: #fff; }
 </style>
 </head>
 
@@ -133,9 +136,11 @@ td {
       <option value="-">➖ XUẤT</option>
     </select>
 
-    <input id="qty" type="number" placeholder="Số lượng">
+    <input id="qty" type="number" class="qty-input" placeholder="SL">
 
-    <input id="noteLine" placeholder="Ghi chú dòng">
+    <textarea id="noteLine" class="note-textarea"
+      placeholder="Ghi chú dòng"
+      oninput="autoResize(this)"></textarea>
 
     <button onclick="addTemp()">➕ THÊM VÀO DANH SÁCH TẠM</button>
   </div>
@@ -156,7 +161,9 @@ td {
       <tbody id="tempTable"></tbody>
     </table>
 
-    <input id="logNote" placeholder="Ghi chú chung">
+    <textarea id="logNote" class="note-textarea"
+      placeholder="Ghi chú chung"
+      oninput="autoResize(this)"></textarea>
 
     <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
   </div>
@@ -168,10 +175,7 @@ td {
 <h3>📊 TỒN KHO</h3>
 <table>
   <thead>
-    <tr>
-      <th>Vật tư</th>
-      <th>Số lượng</th>
-    </tr>
+    <tr><th>Vật tư</th><th>Số lượng</th></tr>
   </thead>
   <tbody id="mainTable"></tbody>
 </table>
@@ -201,6 +205,11 @@ window.onload = () => {
   loadInventory();
   loadHistory();
 };
+
+function autoResize(el){
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
 
 /* INVENTORY */
 function renderInventory() {
@@ -256,12 +265,15 @@ function renderHistory() {
               <tr class="history-detail">
                 <td>${it.name}</td>
                 <td>
-                  <input type="number" value="${it.qty}"
+                  <input type="number" class="qty-input"
+                    value="${it.qty}"
                     onchange="history[${idx}].items[${j}].qty = Number(this.value)">
                 </td>
                 <td>
-                  <input value="${it.note || ''}"
-                    onchange="history[${idx}].items[${j}].note = this.value">
+                  <textarea class="note-textarea"
+                    oninput="autoResize(this)"
+                    onchange="history[${idx}].items[${j}].note = this.value"
+                  >${it.note || ""}</textarea>
                 </td>
               </tr>
             `).join("")}
@@ -328,16 +340,13 @@ async function saveToSheet(){
   await loadHistory();
   alert("✅ Đã lưu & cập nhật kho");
 }
-</script>
-<script>
-async function saveHistory(index) {
-  const group = history[index];
 
+async function saveHistory(index) {
   await fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({
       action: "editHistory",
-      group: group
+      group: history[index]
     })
   });
 
@@ -349,4 +358,3 @@ async function saveHistory(index) {
 
 </body>
 </html>
-
