@@ -11,9 +11,9 @@ body { font-family: Arial; padding: 20px; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
 th { background: #eee; }
-input, select, button { padding: 6px; margin: 4px; }
-button { cursor: pointer; }
-.edit { background: #fff3cd; }
+.group { border: 1px solid #aaa; margin: 10px 0; padding: 10px; }
+.group h4 { margin: 0 0 5px; }
+.editable { background: #fffbe6; }
 </style>
 </head>
 
@@ -21,152 +21,159 @@ button { cursor: pointer; }
 
 <h1>📦 QUẢN LÝ VẬT TƯ</h1>
 
+<!-- ===== NHẬP / XUẤT ===== -->
 <div class="container">
   <div class="box">
-    <h3>➕ Thêm vật tư mới</h3>
-    <input id="newName" placeholder="Tên vật tư">
-    <input id="newQty" type="number" placeholder="Số lượng ban đầu">
-    <button onclick="addItem()">Thêm</button>
-
-    <hr>
-
-    <h3>🔄 Nhập / Xuất</h3>
+    <h3>🔄 Nhập / Xuất (Bộ nhớ tạm)</h3>
     <select id="itemSelect"></select>
     <select id="sign">
-      <option value="NHẬP">Nhập</option>
-      <option value="XUẤT">Xuất</option>
+      <option value="+">Nhập (+)</option>
+      <option value="-">Xuất (-)</option>
     </select>
     <input id="qty" type="number" placeholder="Số lượng">
     <input id="noteLine" placeholder="Ghi chú">
-    <button onclick="addLog()">Ghi nhật ký</button>
+    <button onclick="addTemp()">Thêm tạm</button>
   </div>
 
   <div class="box">
-    <h3>📊 TỒN KHO (CHỈ HIỂN THỊ)</h3>
+    <h3>📋 Nhớ tạm</h3>
     <table>
       <thead>
-        <tr><th>Vật tư</th><th>Số lượng</th></tr>
+        <tr><th>VT</th><th>SL</th><th>Note</th><th></th></tr>
       </thead>
-      <tbody id="inventoryTable"></tbody>
+      <tbody id="tempTable"></tbody>
     </table>
+    <input id="logNote" placeholder="Ghi chú nhóm">
+    <button onclick="saveGroup()">💾 LƯU NHÓM</button>
   </div>
 </div>
 
 <hr>
 
-<h3>📜 LỊCH SỬ NHẬP / XUẤT (CÓ THỂ SỬA)</h3>
+<!-- ===== TỒN KHO ===== -->
+<h3>📊 Tồn kho</h3>
 <table>
-<thead>
-<tr>
-  <th>Thời gian</th>
-  <th>Vật tư</th>
-  <th>Loại</th>
-  <th>Số lượng</th>
-  <th>Ghi chú</th>
-  <th>Lưu</th>
-</tr>
-</thead>
-<tbody id="logTable"></tbody>
+<thead><tr><th>Vật tư</th><th>Số lượng</th></tr></thead>
+<tbody id="mainTable"></tbody>
 </table>
 
+<hr>
+
+<!-- ===== LỊCH SỬ ===== -->
+<h3>🕒 Lịch sử nhập / xuất</h3>
+<div id="historyBox"></div>
+
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbz0C6y89gmcTOK3mtJt52UN9VJ9ZPe5TLPlERhRUE0dVgGuYUsSalLF43kca6xTmxbWfQ/exec";
+const API_URL = "YOUR_WEB_APP_URL";
 
 /* ===== DATA ===== */
 let inventory = [];
-let logs = [];
+let temp = [];
+let history = [];
 
-/* ===== LOAD KHI MỞ WEB ===== */
-window.onload = () => {
-  loadInventory();
-  loadLogs();
+/* ===== LOAD ===== */
+window.onload = async () => {
+  await loadInventory();
+  await loadHistory();
 };
 
-/* ===== LOAD TỒN KHO ===== */
+/* ===== INVENTORY ===== */
 async function loadInventory() {
-  const res = await fetch(API_URL + "?action=getInventory");
-  inventory = await res.json();
+  inventory = await (await fetch(API_URL + "?action=getInventory")).json();
+  renderInventory();
+}
 
-  inventoryTable.innerHTML = "";
+function renderInventory() {
+  mainTable.innerHTML = "";
   itemSelect.innerHTML = "";
-
   inventory.forEach((i, idx) => {
-    inventoryTable.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
-    itemSelect.innerHTML += `<option value="${i.name}">${i.name}</option>`;
+    itemSelect.innerHTML += `<option value="${idx}">${i.name}</option>`;
+    mainTable.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
   });
 }
 
-/* ===== LOAD NHẬT KÝ ===== */
-async function loadLogs() {
-  const res = await fetch(API_URL + "?action=getLogs");
-  logs = await res.json();
-
-  logTable.innerHTML = "";
-  logs.forEach((l, i) => {
-    logTable.innerHTML += `
-    <tr class="edit">
-      <td>${l.time}</td>
-      <td><input value="${l.name}" id="name${i}"></td>
-      <td>
-        <select id="type${i}">
-          <option ${l.type==="NHẬP"?"selected":""}>NHẬP</option>
-          <option ${l.type==="XUẤT"?"selected":""}>XUẤT</option>
-        </select>
-      </td>
-      <td><input type="number" value="${l.qty}" id="qty${i}"></td>
-      <td><input value="${l.note}" id="note${i}"></td>
-      <td><button onclick="updateLog(${i})">💾</button></td>
-    </tr>`;
-  });
-}
-
-/* ===== THÊM VẬT TƯ ===== */
-async function addItem() {
-  await fetch(API_URL, {
-    method: "POST",
-    body: new URLSearchParams({
-      action: "addItem",
-      name: newName.value,
-      qty: newQty.value
-    })
-  });
-  newName.value = newQty.value = "";
-  loadInventory();
-}
-
-/* ===== GHI NHẬT KÝ ===== */
-async function addLog() {
-  await fetch(API_URL, {
-    method: "POST",
-    body: new URLSearchParams({
-      action: "addLog",
-      name: itemSelect.value,
-      type: sign.value,
-      qty: qty.value,
-      note: noteLine.value
-    })
+/* ===== TEMP ===== */
+function addTemp() {
+  const idx = itemSelect.value;
+  temp.push({
+    name: inventory[idx].name,
+    sign: sign.value,
+    qty: Number(qty.value),
+    note: noteLine.value
   });
   qty.value = noteLine.value = "";
-  loadInventory();
-  loadLogs();
+  renderTemp();
 }
 
-/* ===== SỬA NHẬT KÝ ===== */
-async function updateLog(i) {
-  await fetch(API_URL, {
-    method: "POST",
-    body: new URLSearchParams({
-      action: "updateLog",
-      row: logs[i].row,
-      name: document.getElementById("name"+i).value,
-      type: document.getElementById("type"+i).value,
-      qty: document.getElementById("qty"+i).value,
-      note: document.getElementById("note"+i).value
-    })
+function renderTemp() {
+  tempTable.innerHTML = "";
+  temp.forEach((t, i) => {
+    tempTable.innerHTML += `
+      <tr>
+        <td>${t.name}</td>
+        <td>${t.sign}${t.qty}</td>
+        <td>${t.note}</td>
+        <td><button onclick="temp.splice(${i},1);renderTemp()">❌</button></td>
+      </tr>`;
   });
-  alert("Đã cập nhật");
-  loadInventory();
-  loadLogs();
+}
+
+/* ===== SAVE GROUP ===== */
+async function saveGroup() {
+  const groupId = Date.now();
+  await post({
+    action: "saveGroup",
+    groupId,
+    note: logNote.value,
+    items: temp
+  });
+  temp = [];
+  logNote.value = "";
+  await loadInventory();
+  await loadHistory();
+}
+
+/* ===== HISTORY ===== */
+async function loadHistory() {
+  history = await (await fetch(API_URL + "?action=getHistory")).json();
+  renderHistory();
+}
+
+function renderHistory() {
+  historyBox.innerHTML = "";
+  history.forEach(g => {
+    historyBox.innerHTML += `
+      <div class="group">
+        <h4>🕒 ${new Date(g.time).toLocaleString()}</h4>
+        ${g.items.map((i, idx) => `
+          <div>
+            ${i.name}
+            <select onchange="i.sign=this.value">
+              <option ${i.sign==='+'?'selected':''}>+</option>
+              <option ${i.sign==='-'?'selected':''}>-</option>
+            </select>
+            <input class="editable" type="number" value="${i.qty}"
+              onchange="i.qty=Number(this.value)">
+          </div>
+        `).join("")}
+        <button onclick="updateHistory('${g.groupId}')">💾 Cập nhật</button>
+      </div>`;
+  });
+}
+
+/* ===== UPDATE HISTORY ===== */
+async function updateHistory(groupId) {
+  const g = history.find(x => x.groupId === groupId);
+  await post({ action: "updateHistory", groupId, items: g.items });
+  await loadInventory();
+  await loadHistory();
+}
+
+/* ===== POST ===== */
+async function post(data) {
+  const fd = new FormData();
+  fd.append("data", JSON.stringify(data));
+  await fetch(API_URL, { method: "POST", body: fd });
 }
 </script>
 
