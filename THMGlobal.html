@@ -338,9 +338,27 @@ async function saveToSheet(){
   await init();
   alert("Đã lưu");
 }
+  async function saveHistory(index) {
+  if (!confirm("Bạn chắc chắn muốn chỉnh sửa lịch sử này?")) return;
+
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "editHistory",
+      group: history[index]
+    })
+  });
+
+  await loadInventory();
+  await loadHistory();
+
+  alert("✅ Đã cập nhật lại lịch sử & tồn kho");
+}
+
 </script>
 
 </body>
 </html>
+
 
 
