@@ -13,7 +13,6 @@ th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
 th { background: #eee; }
 input, select, button { width: 100%; padding: 6px; margin: 5px 0; }
 button { cursor: pointer; }
-tr.active { background: #ffeeba; }
 </style>
 </head>
 
@@ -21,133 +20,205 @@ tr.active { background: #ffeeba; }
 
 <h1>📦 QUẢN LÝ VẬT TƯ</h1>
 
-<!-- ===== TỒN KHO ===== -->
-<h3>📊 Tồn kho</h3>
-<table>
-<thead>
-<tr><th>Vật tư</th><th>Số lượng</th></tr>
-</thead>
-<tbody id="mainTable"></tbody>
-</table>
+<div class="container">
+  <div class="box">
+    <h3>➕ Thêm vật tư mới</h3>
+    <input id="newName" placeholder="Tên vật tư">
+    <input id="newQty" type="number" placeholder="Số lượng ban đầu">
+    <button onclick="addItem()">Thêm vật tư</button>
+
+    <hr>
+
+    <h3>🔄 Nhập / Xuất</h3>
+    <select id="itemSelect"></select>
+    <select id="sign">
+      <option value="+">Nhập (+)</option>
+      <option value="-">Xuất (-)</option>
+    </select>
+    <input id="qty" type="number" placeholder="Số lượng">
+    <input id="noteLine" placeholder="Ghi chú dòng">
+    <button onclick="addTemp()">Thêm tạm</button>
+  </div>
+
+  <div class="box">
+    <h3>📋 Danh sách tạm</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Vật tư</th>
+          <th>SL</th>
+          <th>Ghi chú</th>
+          <th>Xóa</th>
+        </tr>
+      </thead>
+      <tbody id="tempTable"></tbody>
+    </table>
+
+    <input id="logNote" placeholder="Ghi chú chung">
+    <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
+  </div>
+</div>
 
 <hr>
 
-<!-- ===== NHẬT KÝ ===== -->
-<h3>🧾 Lịch sử nhập / xuất</h3>
+<h3>📊 Tồn kho (trên web)</h3>
 <table>
-<thead>
-<tr>
-  <th>Vật tư</th>
-  <th>Loại</th>
-  <th>SL</th>
-  <th>Ghi chú</th>
-</tr>
-</thead>
-<tbody id="logTable"></tbody>
+  <thead>
+    <tr>
+      <th>Vật tư</th>
+      <th>Số lượng</th>
+    </tr>
+  </thead>
+  <tbody id="mainTable"></tbody>
 </table>
 
-<h4>✏️ Chỉnh sửa dòng đã chọn</h4>
-<input id="editQty" type="number" placeholder="Số lượng">
-<input id="editNote" placeholder="Ghi chú">
-<button onclick="saveEdit()">💾 Lưu chỉnh sửa</button>
-
 <script>
-/* ================= API ================= */
+/* ================== API ================== */
 const API_URL = "https://script.google.com/macros/s/AKfycbz0C6y89gmcTOK3mtJt52UN9VJ9ZPe5TLPlERhRUE0dVgGuYUsSalLF43kca6xTmxbWfQ/exec";
 
-/* ================= DATA ================= */
+/* ================== DATA ================== */
 let inventory = [];
-let logs = [];
-let selectedLog = null;
+let temp = [];
 
-/* ================= LOAD ================= */
-async function loadAll() {
-  try {
-    const res = await fetch(API_URL + "?action=init");
-    const data = await res.json();
-    inventory = data.inventory;
-    logs = data.logs;
-    renderInventory();
-    renderLogs();
-  } catch (e) {
-    alert("❌ Không tải được dữ liệu từ Sheet");
-    console.error(e);
-  }
-}
-
-/* ================= RENDER ================= */
-function renderInventory() {
+/* ================== RENDER ================== */
+function render() {
+  itemSelect.innerHTML = "";
   mainTable.innerHTML = "";
-  inventory.forEach(i => {
-    mainTable.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
-  });
-}
+  tempTable.innerHTML = "";
 
-function renderLogs() {
-  logTable.innerHTML = "";
-  logs.forEach((l, i) => {
-    logTable.innerHTML += `
-      <tr onclick="selectLog(${i})" class="${selectedLog===i?'active':''}">
-        <td>${l.name}</td>
-        <td>${l.type}</td>
-        <td>${l.qty}</td>
-        <td>${l.note}</td>
+  inventory.forEach((item, index) => {
+    itemSelect.innerHTML += `<option value="${index}">${item.name}</option>`;
+    mainTable.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td></tr>`;
+  });
+
+  temp.forEach((t, i) => {
+    tempTable.innerHTML += `
+      <tr>
+        <td>${t.name}</td>
+        <td>${t.sign}${t.qty}</td>
+        <td>${t.note}</td>
+        <td><button onclick="removeTemp(${i})">❌</button></td>
       </tr>
     `;
   });
 }
 
-/* ================= SELECT ================= */
-function selectLog(i) {
-  selectedLog = i;
-  editQty.value = logs[i].qty;
-  editNote.value = logs[i].note;
-  renderLogs();
+function removeTemp(i) {
+  temp.splice(i, 1);
+  render();
 }
 
-/* ================= SAVE EDIT ================= */
-async function saveEdit() {
-  if (selectedLog === null) {
-    alert("Chưa chọn dòng");
+/* ================== POST KHÔNG CORS ================== */
+async function postToSheet(payload) {
+  const formData = new FormData();
+  formData.append("data", JSON.stringify(payload));
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    body: formData
+  });
+
+  return await res.text();
+}
+
+/* ================== THÊM VẬT TƯ ================== */
+async function addItem() {
+  const name = newName.value.trim();
+  const qty = Number(newQty.value);
+
+  if (!name || qty <= 0) {
+    alert("Thiếu dữ liệu");
     return;
   }
 
-  const log = logs[selectedLog];
-  const newQty = Number(editQty.value);
+  inventory.push({ name, qty });
+  render();
 
-  if (newQty <= 0) {
+  try {
+    await postToSheet({
+      note: "Thêm vật tư mới",
+      items: [{ name, sign: "+", qty }]
+    });
+  } catch (e) {
+    alert("❌ Lỗi kết nối Sheet");
+    console.error(e);
+  }
+
+  newName.value = "";
+  newQty.value = "";
+}
+
+/* ================== THÊM TẠM ================== */
+function addTemp() {
+  if (inventory.length === 0) {
+    alert("Chưa có vật tư");
+    return;
+  }
+
+  const idx = itemSelect.value;
+  const q = Number(qty.value);
+
+  if (q <= 0) {
     alert("Sai số lượng");
     return;
   }
 
+  temp.push({
+    name: inventory[idx].name,
+    sign: sign.value,
+    qty: q,
+    note: noteLine.value
+  });
+
+  qty.value = "";
+  noteLine.value = "";
+  render();
+}
+
+/* ================== LƯU VÀO SHEET ================== */
+async function saveToSheet() {
+  if (temp.length === 0) {
+    alert("Chưa có dữ liệu");
+    return;
+  }
+
+  temp.forEach(t => {
+    const item = inventory.find(i => i.name === t.name);
+    if (item) {
+      item.qty += (t.sign === "+" ? t.qty : -t.qty);
+    }
+  });
+
   try {
     await postToSheet({
-      action: "editLog",
-      id: log.id,
-      qty: newQty,
-      note: editNote.value
+      note: logNote.value,
+      items: temp
     });
-
-    alert("✅ Đã cập nhật – kho tự điều chỉnh");
-    loadAll();
-    selectedLog = null;
+    alert("✅ Đã lưu vào Google Sheet");
   } catch (e) {
-    alert("❌ Lỗi khi lưu");
+    alert("❌ Lỗi kết nối Google Sheet");
+    console.error(e);
+    return;
+  }
+
+  temp = [];
+  logNote.value = "";
+  render();
+}
+  async function loadInventory() {
+  try {
+    const res = await fetch(API_URL + "?action=getInventory");
+    inventory = await res.json();
+    render();
+  } catch (e) {
+    alert("❌ Không tải được tồn kho từ Google Sheet");
     console.error(e);
   }
 }
 
-/* ================= POST ================= */
-async function postToSheet(payload) {
-  const fd = new FormData();
-  fd.append("data", JSON.stringify(payload));
-  const res = await fetch(API_URL, { method: "POST", body: fd });
-  return res.text();
-}
-
-/* ================= START ================= */
-window.onload = loadAll;
 </script>
 
 </body>
 </html>
+
+
