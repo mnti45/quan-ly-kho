@@ -5,16 +5,114 @@
 <title>Quản lý vật tư</title>
 
 <style>
-body { font-family: Arial; padding: 20px; }
-.container { display: flex; gap: 20px; }
-.box { flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 6px; }
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-th { background: #eee; }
-button { cursor: pointer; }
-.history-group { background:#f6f6f6; cursor:pointer; }
-.history-detail { background:#fffbe6; }
-input { width: 100%; }
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f3f6fb;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.container {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.box {
+  flex: 1;
+  min-width: 320px;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.1);
+}
+
+/* INPUT TO – RÕ */
+select,
+input {
+  width: 100%;
+  font-size: 20px;
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: 2px solid #ddd;
+}
+
+select:focus,
+input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* BUTTON */
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th {
+  background: #007bff;
+  color: white;
+  padding: 12px;
+  font-size: 18px;
+}
+
+td {
+  padding: 12px;
+  font-size: 18px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+/* DANH SÁCH TẠM */
+.temp-import {
+  background: #e8fff1;
+}
+
+.temp-export {
+  background: #ffecec;
+}
+
+.temp-action button {
+  background: #dc3545;
+  font-size: 18px;
+}
+
+.temp-action button:hover {
+  background: #b52a37;
+}
+
+/* HISTORY */
+.history-group {
+  background: #f0f4ff;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.history-detail {
+  background: #fff;
+}
 </style>
 </head>
 
@@ -23,34 +121,46 @@ input { width: 100%; }
 <h1>📦 QUẢN LÝ VẬT TƯ</h1>
 
 <div class="container">
+
+  <!-- NHẬP / XUẤT -->
   <div class="box">
-    <h3>🔄 Nhập / Xuất</h3>
+    <h3>🔄 NHẬP / XUẤT</h3>
+
     <select id="itemSelect"></select>
+
     <select id="sign">
-      <option value="+">Nhập</option>
-      <option value="-">Xuất</option>
+      <option value="+">➕ NHẬP</option>
+      <option value="-">➖ XUẤT</option>
     </select>
+
     <input id="qty" type="number" placeholder="Số lượng">
+
     <input id="noteLine" placeholder="Ghi chú dòng">
-    <button onclick="addTemp()">Thêm tạm</button>
+
+    <button onclick="addTemp()">➕ THÊM VÀO DANH SÁCH TẠM</button>
   </div>
 
+  <!-- DANH SÁCH TẠM -->
   <div class="box">
-    <h3>📋 Danh sách tạm</h3>
+    <h3>📋 DANH SÁCH TẠM</h3>
+
     <table>
       <thead>
         <tr>
           <th>Vật tư</th>
-          <th>SL</th>
+          <th>Nhập / Xuất</th>
           <th>Ghi chú</th>
           <th>Xóa</th>
         </tr>
       </thead>
       <tbody id="tempTable"></tbody>
     </table>
+
     <input id="logNote" placeholder="Ghi chú chung">
+
     <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
   </div>
+
 </div>
 
 <hr>
@@ -58,7 +168,10 @@ input { width: 100%; }
 <h3>📊 TỒN KHO</h3>
 <table>
   <thead>
-    <tr><th>Vật tư</th><th>Số lượng</th></tr>
+    <tr>
+      <th>Vật tư</th>
+      <th>Số lượng</th>
+    </tr>
   </thead>
   <tbody id="mainTable"></tbody>
 </table>
@@ -70,7 +183,7 @@ input { width: 100%; }
   <thead>
     <tr>
       <th>Thời gian</th>
-      <th>Nhập / Xuất</th>
+      <th>Loại</th>
       <th>Chi tiết</th>
     </tr>
   </thead>
@@ -89,7 +202,7 @@ window.onload = () => {
   loadHistory();
 };
 
-/* ================= INVENTORY ================= */
+/* INVENTORY */
 function renderInventory() {
   itemSelect.innerHTML = "";
   mainTable.innerHTML = "";
@@ -99,36 +212,35 @@ function renderInventory() {
   });
 }
 
-/* ================= TEMP ================= */
+/* TEMP */
 function renderTemp() {
   tempTable.innerHTML = "";
   temp.forEach((t, i) => {
     tempTable.innerHTML += `
-      <tr>
-        <td>${t.name}</td>
-        <td>${t.sign === "+" ? "Nhập" : "Xuất"} ${t.qty}</td>
+      <tr class="${t.sign === '+' ? 'temp-import' : 'temp-export'}">
+        <td><b>${t.name}</b></td>
+        <td>${t.sign === "+" ? "➕ NHẬP" : "➖ XUẤT"}<br><b>${t.qty}</b></td>
         <td>${t.note || ""}</td>
-        <td><button onclick="temp.splice(${i},1);renderTemp()">❌</button></td>
-      </tr>`;
+        <td class="temp-action">
+          <button onclick="temp.splice(${i},1);renderTemp()">❌</button>
+        </td>
+      </tr>
+    `;
   });
 }
 
-/* ================= HISTORY ================= */
+/* HISTORY */
 function renderHistory() {
   historyTable.innerHTML = "";
-
   history.forEach((g, idx) => {
     const typeText = g.items[0].type;
-    const detail = g.items
-      .map(i => i.note)
-      .filter(n => n && n.trim() !== "")
-      .join(" | ");
+    const detail = g.items.map(i => `${i.name}: ${i.qty}`).join(" | ");
 
     historyTable.innerHTML += `
       <tr class="history-group" onclick="toggle(${idx})">
         <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
         <td>${typeText}</td>
-        <td>${detail || ""}</td>
+        <td>${detail}</td>
       </tr>
 
       <tr id="h${idx}" style="display:none">
@@ -156,7 +268,7 @@ function renderHistory() {
 
             <tr>
               <td colspan="3">
-                <button onclick="saveHistory(${idx})">💾 Lưu chỉnh sửa</button>
+                <button onclick="saveHistory(${idx})">💾 LƯU CHỈNH SỬA</button>
               </td>
             </tr>
           </table>
@@ -171,7 +283,7 @@ function toggle(i){
   el.style.display = el.style.display === "none" ? "" : "none";
 }
 
-/* ================= LOAD ================= */
+/* LOAD */
 async function loadInventory(){
   inventory = await fetch(API_URL+"?action=getInventory").then(r=>r.json());
   renderInventory();
@@ -182,49 +294,41 @@ async function loadHistory(){
   renderHistory();
 }
 
-/* ================= ACTION ================= */
+/* ACTION */
 function addTemp(){
   const idx = itemSelect.value;
-  if(qty.value<=0) return alert("Sai số lượng");
+  if(qty.value <= 0) return alert("Sai số lượng");
+
   temp.push({
     name: inventory[idx].name,
     sign: sign.value,
     qty: Number(qty.value),
     note: noteLine.value
   });
-  qty.value=""; noteLine.value="";
+
+  qty.value="";
+  noteLine.value="";
   renderTemp();
 }
 
 async function saveToSheet(){
   if(!temp.length) return;
 
-  const typeText = sign.value === "+" ? "Nhập" : "Xuất";
-
   await fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({
-      type: typeText,
-      note: logNote.value,
-      items: temp
+      items: temp,
+      note: logNote.value
     })
   });
 
-  temp=[]; 
+  temp=[];
   logNote.value="";
   await loadInventory();
   await loadHistory();
-  alert("✅ Đã lưu & cập nhật lịch sử");
+  alert("✅ Đã lưu & cập nhật kho");
 }
-
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
