@@ -197,16 +197,41 @@ function renderTemp() {
 /* ===== HISTORY ===== */
 function renderHistory() {
   historyTable.innerHTML = "";
-  history.forEach(g => {
-    const detail = g.items.map(i=>i.note).filter(Boolean).join(" | ");
+
+  history.forEach((g, idx) => {
+    const isImport = g.items[0].sign === "+";
+
     historyTable.innerHTML += `
-      <tr>
+      <tr class="history-group ${isImport ? 'history-import' : 'history-export'}"
+          onclick="toggle(${idx})">
         <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-        <td>${g.items[0].type}</td>
-        <td>${detail}</td>
-      </tr>`;
+        <td><b>${isImport ? "📥 NHẬP" : "📤 XUẤT"}</b></td>
+        <td>${g.note || "Xem chi tiết ▶"}</td>
+      </tr>
+
+      <tr id="h${idx}" style="display:none">
+        <td colspan="3">
+          <table width="100%">
+            <tr>
+              <th>Vật tư</th>
+              <th>SL</th>
+              <th>Ghi chú</th>
+            </tr>
+
+            ${g.items.map((it,j)=>`
+              <tr class="history-detail">
+                <td>${it.name}</td>
+                <td>${it.sign === "+" ? "+" : "-"}${it.qty}</td>
+                <td>${it.note || ""}</td>
+              </tr>
+            `).join("")}
+          </table>
+        </td>
+      </tr>
+    `;
   });
 }
+
 
 /* ===== LOAD ===== */
 async function loadInventory(){
@@ -257,3 +282,4 @@ async function saveToSheet(){
 
 </body>
 </html>
+
