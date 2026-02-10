@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -14,7 +15,6 @@ th { background: #eee; }
 button { cursor: pointer; }
 .history-group { background:#f6f6f6; cursor:pointer; }
 .history-detail { background:#fffbe6; }
-input { width: 100%; }
 </style>
 </head>
 
@@ -27,8 +27,8 @@ input { width: 100%; }
     <h3>🔄 Nhập / Xuất</h3>
     <select id="itemSelect"></select>
     <select id="sign">
-      <option value="+">Nhập</option>
-      <option value="-">Xuất</option>
+      <option value="+">Nhập (+)</option>
+      <option value="-">Xuất (-)</option>
     </select>
     <input id="qty" type="number" placeholder="Số lượng">
     <input id="noteLine" placeholder="Ghi chú dòng">
@@ -68,11 +68,7 @@ input { width: 100%; }
 <h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
 <table>
   <thead>
-    <tr>
-      <th>Thời gian</th>
-      <th>Nhập / Xuất</th>
-      <th>Chi tiết</th>
-    </tr>
+    <tr><th>Thời gian</th><th>Chi tiết</th></tr>
   </thead>
   <tbody id="historyTable"></tbody>
 </table>
@@ -89,7 +85,6 @@ window.onload = () => {
   loadHistory();
 };
 
-/* ================= INVENTORY ================= */
 function renderInventory() {
   itemSelect.innerHTML = "";
   mainTable.innerHTML = "";
@@ -99,61 +94,39 @@ function renderInventory() {
   });
 }
 
-/* ================= TEMP ================= */
 function renderTemp() {
   tempTable.innerHTML = "";
   temp.forEach((t, i) => {
     tempTable.innerHTML += `
       <tr>
         <td>${t.name}</td>
-        <td>${t.sign === "+" ? "Nhập" : "Xuất"} ${t.qty}</td>
-        <td>${t.note || ""}</td>
+        <td>${t.sign}${t.qty}</td>
+        <td>${t.note}</td>
         <td><button onclick="temp.splice(${i},1);renderTemp()">❌</button></td>
       </tr>`;
   });
 }
 
-/* ================= HISTORY ================= */
 function renderHistory() {
   historyTable.innerHTML = "";
-
   history.forEach((g, idx) => {
-    const typeText = g.items[0].sign === "+" ? "Nhập" : "Xuất";
-    const detail = g.items
-      .map(i => i.note)
-      .filter(n => n && n.trim() !== "")
-      .join(" | ");
-
     historyTable.innerHTML += `
       <tr class="history-group" onclick="toggle(${idx})">
-        <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-        <td>${typeText}</td>
-        <td>${detail || ""}</td>
+        <td>${g.time}</td>
+        <td>${g.items.length} dòng</td>
       </tr>
-
       <tr id="h${idx}" style="display:none">
-        <td colspan="3">
+        <td colspan="2">
           <table width="100%">
-            <tr>
-              <th>Vật tư</th>
-              <th>Số lượng</th>
-              <th>Ghi chú</th>
-            </tr>
-
-            ${g.items.map((it,j)=>`
+            ${g.items.map((i,j)=>`
               <tr class="history-detail">
-                <td>${it.name}</td>
+                <td>${i.name}</td>
                 <td>
-                  <input type="number" value="${it.qty}"
-                    onchange="history[${idx}].items[${j}].qty = Number(this.value)">
+                  <input type="number" value="${i.qty}"
+                    onchange="history[${idx}].items[${j}].qty=this.value">
                 </td>
-                <td>
-                  <input value="${it.note || ''}"
-                    onchange="history[${idx}].items[${j}].note = this.value">
-                </td>
-              </tr>
-            `).join("")}
-
+                <td>${i.sign}</td>
+              </tr>`).join("")}
             <tr>
               <td colspan="3">
                 <button onclick="saveHistory(${idx})">💾 Lưu chỉnh sửa</button>
@@ -161,17 +134,15 @@ function renderHistory() {
             </tr>
           </table>
         </td>
-      </tr>
-    `;
+      </tr>`;
   });
 }
 
 function toggle(i){
   const el = document.getElementById("h"+i);
-  el.style.display = el.style.display === "none" ? "" : "none";
+  el.style.display = el.style.display==="none"?"":"none";
 }
 
-/* ================= LOAD ================= */
 async function loadInventory(){
   inventory = await fetch(API_URL+"?action=getInventory").then(r=>r.json());
   renderInventory();
@@ -182,7 +153,6 @@ async function loadHistory(){
   renderHistory();
 }
 
-/* ================= ACTION ================= */
 function addTemp(){
   const idx = itemSelect.value;
   if(qty.value<=0) return alert("Sai số lượng");
@@ -221,5 +191,6 @@ async function saveHistory(i){
 
 </body>
 </html>
+
 
 
