@@ -238,30 +238,72 @@ function renderTemp(){
 }
 
 /* HISTORY */
-function renderHistory(){
-  historyTable.innerHTML="";
-  history.forEach((g,idx)=>{
-    historyTable.innerHTML+=`
-    <tr class="history-group" onclick="toggle(${idx})">
-      <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-      <td>${g.items[0].type}</td>
-      <td>${g.items.map(i=>`${i.name}:${i.qty}`).join(" | ")}</td>
-    </tr>
+function renderHistory() {
+  historyTable.innerHTML = "";
 
-    <tr id="h${idx}" style="display:none">
-      <td colspan="3">
-        <table width="100%">
-          ${g.items.map(it=>`
-          <tr>
-            <td>${it.name}</td>
-            <td>${it.qty}</td>
-            <td>${it.note||""}</td>
-          </tr>`).join("")}
-        </table>
-      </td>
-    </tr>`;
+  history.forEach((g, idx) => {
+    const detail = g.items.map(i => `${i.name}: ${i.qty}`).join(" | ");
+
+    historyTable.innerHTML += `
+      <tr class="history-group" onclick="toggle(${idx})">
+        <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
+        <td>${g.items[0].type}</td>
+        <td>${detail}</td>
+      </tr>
+
+      <tr id="h${idx}" style="display:none">
+        <td colspan="3">
+          <table width="100%">
+            <tr>
+              <th>Vật tư</th>
+              <th>Số lượng</th>
+              <th>Ghi chú</th>
+            </tr>
+
+            ${g.items.map((it,j)=>`
+              <tr>
+                <td>${it.name}</td>
+
+                <td>
+                  ${
+                    isAdmin
+                    ? `<input type="number" class="qty-input"
+                        value="${it.qty}"
+                        onchange="history[${idx}].items[${j}].qty = Number(this.value)">`
+                    : `<b>${it.qty}</b>`
+                  }
+                </td>
+
+                <td>
+                  ${
+                    isAdmin
+                    ? `<textarea class="note-textarea"
+                        onchange="history[${idx}].items[${j}].note = this.value">${it.note||""}</textarea>`
+                    : (it.note || "")
+                  }
+                </td>
+              </tr>
+            `).join("")}
+
+            ${
+              isAdmin
+              ? `<tr>
+                  <td colspan="3">
+                    <button onclick="saveHistory(${idx})">
+                      💾 LƯU CHỈNH SỬA
+                    </button>
+                  </td>
+                </tr>`
+              : ``
+            }
+
+          </table>
+        </td>
+      </tr>
+    `;
   });
 }
+
 
 function toggle(i){
   const el=document.getElementById("h"+i);
@@ -300,4 +342,5 @@ async function saveToSheet(){
 
 </body>
 </html>
+
 
