@@ -198,26 +198,27 @@ function addTemp(){
 
 async function saveToSheet(){
   if(!temp.length) return;
+
+  const typeText = sign.value === "+" ? "Nhập" : "Xuất";
+
   await fetch(API_URL,{
     method:"POST",
-    body:JSON.stringify({note:logNote.value,items:temp})
+    body:JSON.stringify({
+      type: typeText,
+      note: logNote.value,
+      items: temp
+    })
   });
-  temp=[]; logNote.value="";
+
+  temp=[]; 
+  logNote.value="";
   await loadInventory();
   await loadHistory();
   alert("✅ Đã lưu & cập nhật lịch sử");
 }
 
-async function saveHistory(i){
-  await fetch(API_URL,{
-    method:"POST",
-    body:JSON.stringify({action:"editHistory",group:history[i]})
-  });
-  await loadInventory();
-  await loadHistory();
-  alert("✅ Đã cập nhật lại kho");
-}
 </script>
 
 </body>
 </html>
+
