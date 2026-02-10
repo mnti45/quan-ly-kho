@@ -74,7 +74,7 @@ button { cursor: pointer; }
 
 <script>
 /* ================== API ================== */
-const API_URL = "https://script.google.com/macros/s/AKfycbyBigixc6F3lwuIttIHvbLaE2Kr_MJWG4jbqTiopBBEgWBFUyasrmRO2MU8de_WurW3mg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz0C6y89gmcTOK3mtJt52UN9VJ9ZPe5TLPlERhRUE0dVgGuYUsSalLF43kca6xTmxbWfQ/exec";
 
 /* ================== DATA ================== */
 let inventory = [];
@@ -205,8 +205,20 @@ async function saveToSheet() {
   logNote.value = "";
   render();
 }
+  async function loadInventory() {
+  try {
+    const res = await fetch(API_URL + "?action=getInventory");
+    inventory = await res.json();
+    render();
+  } catch (e) {
+    alert("❌ Không tải được tồn kho từ Google Sheet");
+    console.error(e);
+  }
+}
+
 </script>
 
 </body>
 </html>
+
 
