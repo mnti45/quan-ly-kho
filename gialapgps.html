@@ -74,7 +74,7 @@ button { cursor: pointer; }
 
 <script>
 /* ================== API ================== */
-const API_URL = "https://script.google.com/macros/s/AKfycbyPn505mU77JbHPBRFNA0xax-bOU5meKT8VepDElZTtxeN099UW2uCWEW4NUS8aj4L-iw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyfDY5TMUEhv-kYore0uksrQsqztSGx3XMFCD-S5w2EYNY4Z4BZPI29ClEttQoYEdpD-Q/exec";
 
 /* ================== DATA ================== */
 let inventory = [];
@@ -108,20 +108,15 @@ function removeTemp(i) {
   render();
 }
 
-/* ================== FETCH CHUẨN ================== */
+/* ================== POST KHÔNG CORS ================== */
 async function postToSheet(payload) {
+  const formData = new FormData();
+  formData.append("data", JSON.stringify(payload));
+
   const res = await fetch(API_URL, {
     method: "POST",
-    mode: "cors",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
+    body: formData
   });
-
-  if (!res.ok) {
-    throw new Error("HTTP error");
-  }
 
   return await res.text();
 }
@@ -145,7 +140,7 @@ async function addItem() {
       items: [{ name, sign: "+", qty }]
     });
   } catch (e) {
-    alert("Lỗi kết nối Sheet");
+    alert("❌ Lỗi kết nối Sheet");
     console.error(e);
   }
 
