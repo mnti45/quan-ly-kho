@@ -2,64 +2,120 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>VẬT TƯ KHO PHÚ MỸ</title>
+<title>VẬT TƯ KHO PHÚ MỸ </title>
 
 <style>
-body{
-  font-family: Arial;
-  background:#f3f6fb;
-  padding:20px;
-}
-h1{margin-bottom:20px}
-
-.box{
-  background:#fff;
-  padding:20px;
-  border-radius:12px;
-  box-shadow:0 4px 14px rgba(0,0,0,.1);
-  margin-bottom:20px;
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f3f6fb;
 }
 
-input,select,textarea,button{
-  width:100%;
-  padding:12px;
-  font-size:18px;
-  border-radius:8px;
-  border:2px solid #ddd;
-  margin-bottom:12px;
+h1 { margin-bottom: 20px; }
+
+.container {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
 }
 
-button{
-  background:#007bff;
-  color:#fff;
-  font-weight:bold;
-  border:none;
-  cursor:pointer;
-}
-button:hover{background:#0056b3}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-th{
-  background:#007bff;
-  color:#fff;
-  padding:10px;
-}
-td{
-  padding:10px;
-  border-bottom:1px solid #eee;
-  text-align:center;
+.box {
+  flex: 1;
+  min-width: 320px;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.1);
 }
 
-.history-group{
-  background:#eef3ff;
-  cursor:pointer;
-  font-weight:bold;
+/* INPUT TO – RÕ */
+select,
+input,
+textarea {
+  width: 100%;
+  font-size: 20px;
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  border: 2px solid #ddd;
+  resize: none;
 }
 
-.hidden{display:none}
+select:focus,
+input:focus,
+textarea:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* INPUT RIÊNG */
+.qty-input {
+  width: 90px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 44px;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+/* BUTTON */
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover { background: #0056b3; }
+
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th {
+  background: #007bff;
+  color: white;
+  padding: 12px;
+  font-size: 18px;
+}
+
+td {
+  padding: 12px;
+  font-size: 18px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+
+/* TEMP */
+.temp-import { background: #e8fff1; }
+.temp-export { background: #ffecec; }
+
+.temp-action button {
+  background: #dc3545;
+  font-size: 18px;
+}
+.temp-action button:hover { background: #b52a37; }
+
+/* HISTORY */
+.history-group {
+  background: #f0f4ff;
+  cursor: pointer;
+  font-weight: bold;
+}
+.history-detail { background: #fff; }
 </style>
 </head>
 
@@ -67,158 +123,166 @@ td{
 
 <h1>VẬT TƯ KHO PHÚ MỸ</h1>
 
-<!-- LOGIN -->
-<div class="box" id="loginBox">
-  <h3>🔐 ĐĂNG NHẬP ADMIN</h3>
-  <input id="user" placeholder="Tài khoản">
-  <input id="pass" type="password" placeholder="Mật khẩu">
-  <button onclick="login()">ĐĂNG NHẬP</button>
+<div class="container">
+
+  <!-- NHẬP / XUẤT -->
+  <div class="box">
+    <h3>🔄 NHẬP / XUẤT</h3>
+
+    <select id="itemSelect"></select>
+
+    <select id="sign">
+      <option value="+">➕ NHẬP</option>
+      <option value="-">➖ XUẤT</option>
+    </select>
+
+    <input id="qty" type="number" class="qty-input" placeholder="SL">
+
+    <textarea id="noteLine" class="note-textarea"
+      placeholder="Ghi chú dòng"
+      oninput="autoResize(this)"></textarea>
+
+    <button onclick="addTemp()">➕ THÊM VÀO DANH SÁCH TẠM</button>
+  </div>
+
+  <!-- DANH SÁCH TẠM -->
+  <div class="box">
+    <h3>📋 DANH SÁCH TẠM</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Vật tư</th>
+          <th>Nhập / Xuất</th>
+          <th>Ghi chú</th>
+          <th>Xóa</th>
+        </tr>
+      </thead>
+      <tbody id="tempTable"></tbody>
+    </table>
+
+    <textarea id="logNote" class="note-textarea"
+      placeholder="Ghi chú chung"
+      oninput="autoResize(this)"></textarea>
+
+    <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
+  </div>
+
 </div>
 
-<!-- NHẬP XUẤT (ADMIN ONLY) -->
-<div class="box hidden" id="adminBox">
-  <h3>🔄 NHẬP / XUẤT</h3>
+<hr>
 
-  <select id="itemSelect"></select>
+<h3> VẬT TƯ HIỆN TẠI TẠI KHO</h3>
+<table>
+  <thead>
+    <tr><th>Vật tư</th><th>Số lượng</th></tr>
+  </thead>
+  <tbody id="mainTable"></tbody>
+</table>
 
-  <select id="sign">
-    <option value="+">➕ NHẬP</option>
-    <option value="-">➖ XUẤT</option>
-  </select>
+<hr>
 
-  <input id="qty" type="number" placeholder="Số lượng">
-
-  <textarea id="noteLine" placeholder="Ghi chú"></textarea>
-
-  <button onclick="addTemp()">➕ THÊM TẠM</button>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Vật tư</th>
-        <th>Loại</th>
-        <th>SL</th>
-        <th>Xóa</th>
-      </tr>
-    </thead>
-    <tbody id="tempTable"></tbody>
-  </table>
-
-  <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
-</div>
-
-<!-- TỒN KHO -->
-<div class="box">
-  <h3>📦 VẬT TƯ HIỆN TẠI</h3>
-  <table>
-    <thead>
-      <tr><th>Vật tư</th><th>Số lượng</th></tr>
-    </thead>
-    <tbody id="mainTable"></tbody>
-  </table>
-</div>
-
-<!-- HISTORY -->
-<div class="box">
-  <h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Thời gian</th>
-        <th>Loại</th>
-        <th>Chi tiết</th>
-      </tr>
-    </thead>
-    <tbody id="historyTable"></tbody>
-  </table>
-</div>
+<h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Thời gian</th>
+      <th>Loại</th>
+      <th>Chi tiết</th>
+    </tr>
+  </thead>
+  <tbody id="historyTable"></tbody>
+</table>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxduYVlwx2reJLXTD-mvCHyKshrXZvHWxkK-gWcf6Iy74MRhheN4TwX2XLUzDD6rhMeMQ/exec";
 
-let USER_ROLE = "guest";
-let inventory=[], history=[], temp=[];
+let inventory = [];
+let temp = [];
+let history = [];
 
-/* LOAD DATA CHO GUEST */
-window.onload = ()=>{
+window.onload = () => {
   loadInventory();
   loadHistory();
 };
 
-/* LOGIN */
-function login(){
-  if(user.value==="admin" && pass.value==="123"){
-    USER_ROLE="admin";
-    loginBox.classList.add("hidden");
-    adminBox.classList.remove("hidden");
-    alert("Đăng nhập ADMIN thành công");
-  }else{
-    alert("Sai tài khoản hoặc mật khẩu");
-  }
+function autoResize(el){
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
 }
 
 /* INVENTORY */
-async function loadInventory(){
-  inventory = await fetch(API_URL+"?action=getInventory").then(r=>r.json());
-  renderInventory();
+function renderInventory() {
+  itemSelect.innerHTML = "";
+  mainTable.innerHTML = "";
+  inventory.forEach((i, idx) => {
+    itemSelect.innerHTML += `<option value="${idx}">${i.name}</option>`;
+    mainTable.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
+  });
 }
 
-function renderInventory(){
-  mainTable.innerHTML="";
-  itemSelect.innerHTML="";
-  inventory.forEach((i,idx)=>{
-    mainTable.innerHTML+=`<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
-    if(USER_ROLE==="admin"){
-      itemSelect.innerHTML+=`<option value="${idx}">${i.name}</option>`;
-    }
+/* TEMP */
+function renderTemp() {
+  tempTable.innerHTML = "";
+  temp.forEach((t, i) => {
+    tempTable.innerHTML += `
+      <tr class="${t.sign === '+' ? 'temp-import' : 'temp-export'}">
+        <td><b>${t.name}</b></td>
+        <td>${t.sign === "+" ? "➕ NHẬP" : "➖ XUẤT"}<br><b>${t.qty}</b></td>
+        <td>${t.note || ""}</td>
+        <td class="temp-action">
+          <button onclick="temp.splice(${i},1);renderTemp()">❌</button>
+        </td>
+      </tr>
+    `;
   });
 }
 
 /* HISTORY */
-async function loadHistory(){
-  history = await fetch(API_URL+"?action=getHistory").then(r=>r.json());
-  renderHistory();
-}
+function renderHistory() {
+  historyTable.innerHTML = "";
+  history.forEach((g, idx) => {
+    const typeText = g.items[0].type;
+    const detail = g.items.map(i => `${i.name}: ${i.qty}`).join(" | ");
 
-function renderHistory(){
-  historyTable.innerHTML="";
-  history.forEach((g,idx)=>{
-    historyTable.innerHTML+=`
+    historyTable.innerHTML += `
       <tr class="history-group" onclick="toggle(${idx})">
         <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-        <td>${g.items[0].type}</td>
-        <td>${g.items.map(i=>i.name+"("+i.qty+")").join(" | ")}</td>
+        <td>${typeText}</td>
+        <td>${detail}</td>
       </tr>
 
-      <tr id="h${idx}" class="hidden">
+      <tr id="h${idx}" style="display:none">
         <td colspan="3">
           <table width="100%">
+            <tr>
+              <th>Vật tư</th>
+              <th>Số lượng</th>
+              <th>Ghi chú</th>
+            </tr>
+
             ${g.items.map((it,j)=>`
-              <tr>
+              <tr class="history-detail">
                 <td>${it.name}</td>
                 <td>
-                  ${USER_ROLE==="admin"
-                    ? `<input type="number" value="${it.qty}"
-                      onchange="history[${idx}].items[${j}].qty=Number(this.value)">`
-                    : `<b>${it.qty}</b>`
-                  }
+                  <input type="number" class="qty-input"
+                    value="${it.qty}"
+                    onchange="history[${idx}].items[${j}].qty = Number(this.value)">
                 </td>
                 <td>
-                  ${USER_ROLE==="admin"
-                    ? `<input value="${it.note||""}"
-                      onchange="history[${idx}].items[${j}].note=this.value">`
-                    : (it.note||"")
-                  }
+                  <textarea class="note-textarea"
+                    oninput="autoResize(this)"
+                    onchange="history[${idx}].items[${j}].note = this.value"
+                  >${it.note || ""}</textarea>
                 </td>
               </tr>
             `).join("")}
 
-            ${USER_ROLE==="admin"
-              ? `<tr><td colspan="3">
-                   <button onclick="saveHistory(${idx})">💾 LƯU CHỈNH SỬA</button>
-                 </td></tr>`
-              : ""
-            }
+            <tr>
+              <td colspan="3">
+                <button onclick="saveHistory(${idx})">💾 LƯU CHỈNH SỬA</button>
+              </td>
+            </tr>
           </table>
         </td>
       </tr>
@@ -227,58 +291,68 @@ function renderHistory(){
 }
 
 function toggle(i){
-  const el=document.getElementById("h"+i);
-  el.classList.toggle("hidden");
+  const el = document.getElementById("h"+i);
+  el.style.display = el.style.display === "none" ? "" : "none";
 }
 
-/* TEMP + SAVE */
+/* LOAD */
+async function loadInventory(){
+  inventory = await fetch(API_URL+"?action=getInventory").then(r=>r.json());
+  renderInventory();
+}
+
+async function loadHistory(){
+  history = await fetch(API_URL+"?action=getHistory").then(r=>r.json());
+  renderHistory();
+}
+
+/* ACTION */
 function addTemp(){
-  if(qty.value<=0) return;
+  const idx = itemSelect.value;
+  if(qty.value <= 0) return alert("Sai số lượng");
+
   temp.push({
-    name: inventory[itemSelect.value].name,
+    name: inventory[idx].name,
     sign: sign.value,
     qty: Number(qty.value),
     note: noteLine.value
   });
-  renderTemp();
-}
 
-function renderTemp(){
-  tempTable.innerHTML="";
-  temp.forEach((t,i)=>{
-    tempTable.innerHTML+=`
-      <tr>
-        <td>${t.name}</td>
-        <td>${t.sign==="+"?"Nhập":"Xuất"}</td>
-        <td>${t.qty}</td>
-        <td><button onclick="temp.splice(${i},1);renderTemp()">❌</button></td>
-      </tr>`;
-  });
+  qty.value="";
+  noteLine.value="";
+  renderTemp();
 }
 
 async function saveToSheet(){
   if(!temp.length) return;
-  await fetch(API_URL,{
-    method:"POST",
-    body:JSON.stringify({items:temp})
-  });
-  temp=[];
-  renderTemp();
-  loadInventory();
-  loadHistory();
-}
 
-/* EDIT HISTORY */
-async function saveHistory(i){
   await fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({
-      action:"editHistory",
-      group:history[i]
+      items: temp,
+      note: logNote.value
     })
   });
-  loadInventory();
-  loadHistory();
+
+  temp=[];
+  logNote.value="";
+  await loadInventory();
+  await loadHistory();
+  alert("✅ Đã lưu & cập nhật kho");
+}
+
+async function saveHistory(index) {
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "editHistory",
+      group: history[index]
+    })
+  });
+
+  await loadInventory();
+  await loadHistory();
+  alert("✅ Đã cập nhật lại lịch sử & tồn kho");
 }
 </script>
 
