@@ -11,9 +11,9 @@ body { font-family: Arial; padding: 20px; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
 th { background: #eee; }
-input, select, button { width: 100%; padding: 6px; margin: 5px 0; }
 button { cursor: pointer; }
-.editable { background: #fffbe6; }
+.history-group { background:#f6f6f6; cursor:pointer; }
+.history-detail { background:#fffbe6; }
 </style>
 </head>
 
@@ -23,13 +23,6 @@ button { cursor: pointer; }
 
 <div class="container">
   <div class="box">
-    <h3>➕ Thêm vật tư mới</h3>
-    <input id="newName" placeholder="Tên vật tư">
-    <input id="newQty" type="number" placeholder="Số lượng ban đầu">
-    <button onclick="addItem()">Thêm vật tư</button>
-
-    <hr>
-
     <h3>🔄 Nhập / Xuất</h3>
     <select id="itemSelect"></select>
     <select id="sign">
@@ -54,7 +47,6 @@ button { cursor: pointer; }
       </thead>
       <tbody id="tempTable"></tbody>
     </table>
-
     <input id="logNote" placeholder="Ghi chú chung">
     <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
   </div>
@@ -62,160 +54,139 @@ button { cursor: pointer; }
 
 <hr>
 
-<h3>📊 TỒN KHO (click để sửa)</h3>
+<h3>📊 TỒN KHO</h3>
 <table>
   <thead>
-    <tr>
-      <th>Vật tư</th>
-      <th>Số lượng</th>
-      <th>Lưu</th>
-    </tr>
+    <tr><th>Vật tư</th><th>Số lượng</th></tr>
   </thead>
   <tbody id="mainTable"></tbody>
 </table>
 
-<script>
-/* ================== API ================== */
-const API_URL = "https://script.google.com/macros/s/AKfycby07hfMidEUBLe5x_3rfKqjd_rpKxIBoIvcceSwhtZwnFq_3YqnbrLfA7wuc3SLlXIpsA/exec";
+<hr>
 
-/* ================== DATA ================== */
+<h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
+<table>
+  <thead>
+    <tr><th>Thời gian</th><th>Chi tiết</th></tr>
+  </thead>
+  <tbody id="historyTable"></tbody>
+</table>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbyTKQ0uTNvOQLZrSTBXc17sb8Wiytenx46ufjGB95fHQN-YC6C-ltomiW5NpDYqyNEB0A/exec";
+
 let inventory = [];
 let temp = [];
+let history = [];
 
-/* ================== LOAD KHI MỞ WEB ================== */
-window.onload = loadInventory;
+window.onload = () => {
+  loadInventory();
+  loadHistory();
+};
 
-/* ================== RENDER ================== */
-function render() {
+function renderInventory() {
   itemSelect.innerHTML = "";
   mainTable.innerHTML = "";
-  tempTable.innerHTML = "";
-
-  inventory.forEach((item, i) => {
-    itemSelect.innerHTML += `<option value="${i}">${item.name}</option>`;
-
-    mainTable.innerHTML += `
-      <tr>
-        <td>${item.name}</td>
-        <td>
-          <input class="editable" type="number" value="${item.qty}"
-            onchange="inventory[${i}].qty = Number(this.value)">
-        </td>
-        <td>
-          <button onclick="saveEdit(${i})">💾</button>
-        </td>
-      </tr>
-    `;
+  inventory.forEach((i, idx) => {
+    itemSelect.innerHTML += `<option value="${idx}">${i.name}</option>`;
+    mainTable.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
   });
+}
 
+function renderTemp() {
+  tempTable.innerHTML = "";
   temp.forEach((t, i) => {
     tempTable.innerHTML += `
       <tr>
         <td>${t.name}</td>
         <td>${t.sign}${t.qty}</td>
         <td>${t.note}</td>
-        <td><button onclick="removeTemp(${i})">❌</button></td>
+        <td><button onclick="temp.splice(${i},1);renderTemp()">❌</button></td>
+      </tr>`;
+  });
+}
+
+function renderHistory() {
+  historyTable.innerHTML = "";
+  history.forEach((g, idx) => {
+    historyTable.innerHTML += `
+      <tr class="history-group" onclick="toggle(${idx})">
+        <td>${g.time}</td>
+        <td>${g.items.length} dòng</td>
       </tr>
-    `;
+      <tr id="h${idx}" style="display:none">
+        <td colspan="2">
+          <table width="100%">
+            ${g.items.map((i,j)=>`
+              <tr class="history-detail">
+                <td>${i.name}</td>
+                <td>
+                  <input type="number" value="${i.qty}"
+                    onchange="history[${idx}].items[${j}].qty=this.value">
+                </td>
+                <td>${i.sign}</td>
+              </tr>`).join("")}
+            <tr>
+              <td colspan="3">
+                <button onclick="saveHistory(${idx})">💾 Lưu chỉnh sửa</button>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>`;
   });
 }
 
-function removeTemp(i) {
-  temp.splice(i, 1);
-  render();
+function toggle(i){
+  const el = document.getElementById("h"+i);
+  el.style.display = el.style.display==="none"?"":"none";
 }
 
-/* ================== LOAD TỒN KHO ================== */
-async function loadInventory() {
-  try {
-    const res = await fetch(API_URL + "?action=getInventory");
-    inventory = await res.json();
-    render();
-  } catch (e) {
-    alert("❌ Không tải được tồn kho");
-    console.error(e);
-  }
+async function loadInventory(){
+  inventory = await fetch(API_URL+"?action=getInventory").then(r=>r.json());
+  renderInventory();
 }
 
-/* ================== POST ================== */
-async function postToSheet(payload) {
-  const formData = new FormData();
-  formData.append("data", JSON.stringify(payload));
-
-  const res = await fetch(API_URL, {
-    method: "POST",
-    body: formData
-  });
-
-  return await res.text();
+async function loadHistory(){
+  history = await fetch(API_URL+"?action=getHistory").then(r=>r.json());
+  renderHistory();
 }
 
-/* ================== THÊM VẬT TƯ ================== */
-async function addItem() {
-  const name = newName.value.trim();
-  const qty = Number(newQty.value);
-
-  if (!name || qty <= 0) return alert("Thiếu dữ liệu");
-
-  inventory.push({ name, qty });
-  render();
-
-  await postToSheet({
-    note: "Thêm vật tư mới",
-    items: [{ name, sign: "+", qty }]
-  });
-
-  newName.value = "";
-  newQty.value = "";
-}
-
-/* ================== THÊM TẠM ================== */
-function addTemp() {
+function addTemp(){
   const idx = itemSelect.value;
-  const q = Number(qty.value);
-  if (q <= 0) return alert("Sai số lượng");
-
+  if(qty.value<=0) return alert("Sai số lượng");
   temp.push({
     name: inventory[idx].name,
     sign: sign.value,
-    qty: q,
+    qty: Number(qty.value),
     note: noteLine.value
   });
-
-  qty.value = "";
-  noteLine.value = "";
-  render();
+  qty.value=""; noteLine.value="";
+  renderTemp();
 }
 
-/* ================== LƯU NHẬP / XUẤT ================== */
-async function saveToSheet() {
-  if (temp.length === 0) return alert("Chưa có dữ liệu");
-
-  await postToSheet({
-    note: logNote.value,
-    items: temp
+async function saveToSheet(){
+  if(!temp.length) return;
+  await fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({note:logNote.value,items:temp})
   });
-
-  temp = [];
-  logNote.value = "";
+  temp=[]; logNote.value="";
   await loadInventory();
-  alert("✅ Đã cập nhật kho");
+  await loadHistory();
+  alert("✅ Đã lưu & cập nhật lịch sử");
 }
 
-/* ================== LƯU SỬA TỒN KHO ================== */
-async function saveEdit(i) {
-  const item = inventory[i];
-
-  await postToSheet({
-    note: "Chỉnh sửa tồn kho trực tiếp",
-    items: [{ name: item.name, sign: "+", qty: item.qty }]
+async function saveHistory(i){
+  await fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"editHistory",group:history[i]})
   });
-
-  alert("✅ Đã cập nhật");
   await loadInventory();
+  await loadHistory();
+  alert("✅ Đã cập nhật lại kho");
 }
 </script>
 
 </body>
 </html>
-
