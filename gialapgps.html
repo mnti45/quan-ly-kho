@@ -118,7 +118,7 @@ function renderHistory() {
   historyTable.innerHTML = "";
 
   history.forEach((g, idx) => {
-    const typeText = g.items[0].sign === "+" ? "Nhập" : "Xuất";
+    const typeText = g.items[0].type;
     const detail = g.items
       .map(i => i.note)
       .filter(n => n && n.trim() !== "")
@@ -221,5 +221,6 @@ async function saveToSheet(){
 
 </body>
 </html>
+
 
 
