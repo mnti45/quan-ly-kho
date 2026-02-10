@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <title>Quản lý vật tư</title>
+
 <style>
 body { font-family: Arial; padding: 20px; }
 .container { display: flex; gap: 20px; }
@@ -17,65 +17,78 @@ button { cursor: pointer; }
 </head>
 
 <body>
+
 <h1>📦 QUẢN LÝ VẬT TƯ</h1>
 
 <div class="container">
-<div class="box">
-<h3>➕ Thêm vật tư mới</h3>
-<input id="newName" placeholder="Tên vật tư">
-<input id="newQty" type="number" placeholder="Số lượng ban đầu">
-<button onclick="addItem()">Thêm vật tư</button>
+  <div class="box">
+    <h3>➕ Thêm vật tư mới</h3>
+    <input id="newName" placeholder="Tên vật tư">
+    <input id="newQty" type="number" placeholder="Số lượng ban đầu">
+    <button onclick="addItem()">Thêm vật tư</button>
 
-<hr>
+    <hr>
 
-<h3>🔄 Nhập / Xuất</h3>
-<select id="itemSelect"></select>
-<select id="sign">
-  <option value="+">Nhập (+)</option>
-  <option value="-">Xuất (-)</option>
-</select>
-<input id="qty" type="number" placeholder="Số lượng">
-<input id="noteLine" placeholder="Ghi chú dòng">
-<button onclick="addTemp()">Thêm tạm</button>
-</div>
+    <h3>🔄 Nhập / Xuất</h3>
+    <select id="itemSelect"></select>
+    <select id="sign">
+      <option value="+">Nhập (+)</option>
+      <option value="-">Xuất (-)</option>
+    </select>
+    <input id="qty" type="number" placeholder="Số lượng">
+    <input id="noteLine" placeholder="Ghi chú dòng">
+    <button onclick="addTemp()">Thêm tạm</button>
+  </div>
 
-<div class="box">
-<h3>📋 Danh sách tạm</h3>
-<table>
-<tr><th>Vật tư</th><th>SL</th><th>Ghi chú</th><th>Xóa</th></tr>
-<tbody id="tempTable"></tbody>
-</table>
+  <div class="box">
+    <h3>📋 Danh sách tạm</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Vật tư</th>
+          <th>SL</th>
+          <th>Ghi chú</th>
+          <th>Xóa</th>
+        </tr>
+      </thead>
+      <tbody id="tempTable"></tbody>
+    </table>
 
-<input id="logNote" placeholder="Ghi chú chung">
-<button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
-</div>
+    <input id="logNote" placeholder="Ghi chú chung">
+    <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
+  </div>
 </div>
 
 <hr>
 
 <h3>📊 Tồn kho (trên web)</h3>
 <table>
-<tr><th>Vật tư</th><th>Số lượng</th></tr>
-<tbody id="mainTable"></tbody>
+  <thead>
+    <tr>
+      <th>Vật tư</th>
+      <th>Số lượng</th>
+    </tr>
+  </thead>
+  <tbody id="mainTable"></tbody>
 </table>
 
 <script>
-/* ====== DÁN LINK WEB APP ====== */
-const API_URL = "https://script.google.com/macros/s/AKfycbxFJVcReWRbmOE8kYddYVcWErGY3wRQQmh0IDnWnKow8Io_ry2L2s48tifmUygQ3y74BA/exec";
+/* ================== API ================== */
+const API_URL = "https://script.google.com/macros/s/AKfycbyPn505mU77JbHPBRFNA0xax-bOU5meKT8VepDElZTtxeN099UW2uCWEW4NUS8aj4L-iw/exec";
 
-/* ====== DỮ LIỆU ====== */
+/* ================== DATA ================== */
 let inventory = [];
 let temp = [];
 
-/* ====== HIỂN THỊ ====== */
+/* ================== RENDER ================== */
 function render() {
   itemSelect.innerHTML = "";
   mainTable.innerHTML = "";
   tempTable.innerHTML = "";
 
-  inventory.forEach((i, idx) => {
-    itemSelect.innerHTML += `<option value="${idx}">${i.name}</option>`;
-    mainTable.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
+  inventory.forEach((item, index) => {
+    itemSelect.innerHTML += `<option value="${index}">${item.name}</option>`;
+    mainTable.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td></tr>`;
   });
 
   temp.forEach((t, i) => {
@@ -84,13 +97,37 @@ function render() {
         <td>${t.name}</td>
         <td>${t.sign}${t.qty}</td>
         <td>${t.note}</td>
-        <td><button onclick="temp.splice(${i},1);render()">❌</button></td>
-      </tr>`;
+        <td><button onclick="removeTemp(${i})">❌</button></td>
+      </tr>
+    `;
   });
 }
 
-/* ====== THÊM VẬT TƯ MỚI ====== */
-function addItem() {
+function removeTemp(i) {
+  temp.splice(i, 1);
+  render();
+}
+
+/* ================== FETCH CHUẨN ================== */
+async function postToSheet(payload) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    mode: "cors",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error("HTTP error");
+  }
+
+  return await res.text();
+}
+
+/* ================== THÊM VẬT TƯ ================== */
+async function addItem() {
   const name = newName.value.trim();
   const qty = Number(newQty.value);
 
@@ -100,22 +137,29 @@ function addItem() {
   }
 
   inventory.push({ name, qty });
+  render();
 
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  try {
+    await postToSheet({
       note: "Thêm vật tư mới",
       items: [{ name, sign: "+", qty }]
-    })
-  });
+    });
+  } catch (e) {
+    alert("Lỗi kết nối Sheet");
+    console.error(e);
+  }
 
-  newName.value = newQty.value = "";
-  render();
+  newName.value = "";
+  newQty.value = "";
 }
 
-/* ====== THÊM NHẬP/XUẤT TẠM ====== */
+/* ================== THÊM TẠM ================== */
 function addTemp() {
+  if (inventory.length === 0) {
+    alert("Chưa có vật tư");
+    return;
+  }
+
   const idx = itemSelect.value;
   const q = Number(qty.value);
 
@@ -131,12 +175,13 @@ function addTemp() {
     note: noteLine.value
   });
 
-  qty.value = noteLine.value = "";
+  qty.value = "";
+  noteLine.value = "";
   render();
 }
 
-/* ====== LƯU VÀO GOOGLE SHEET ====== */
-function saveToSheet() {
+/* ================== LƯU VÀO SHEET ================== */
+async function saveToSheet() {
   if (temp.length === 0) {
     alert("Chưa có dữ liệu");
     return;
@@ -144,19 +189,22 @@ function saveToSheet() {
 
   temp.forEach(t => {
     const item = inventory.find(i => i.name === t.name);
-    item.qty += t.sign === "+" ? t.qty : -t.qty;
+    if (item) {
+      item.qty += (t.sign === "+" ? t.qty : -t.qty);
+    }
   });
 
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  try {
+    await postToSheet({
       note: logNote.value,
       items: temp
-    })
-  })
-  .then(() => alert("Đã lưu vào Sheet"))
-  .catch(() => alert("Lỗi kết nối"));
+    });
+    alert("✅ Đã lưu vào Google Sheet");
+  } catch (e) {
+    alert("❌ Lỗi kết nối Google Sheet");
+    console.error(e);
+    return;
+  }
 
   temp = [];
   logNote.value = "";
@@ -166,6 +214,3 @@ function saveToSheet() {
 
 </body>
 </html>
-
-
-
