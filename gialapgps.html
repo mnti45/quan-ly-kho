@@ -67,10 +67,15 @@ button { cursor: pointer; }
 <h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
 <table>
   <thead>
-    <tr><th>Thời gian</th><th>Chi tiết</th></tr>
+    <tr>
+      <th>Thời gian</th>
+      <th>Nhập / Xuất</th>
+      <th>Chi tiết</th>
+    </tr>
   </thead>
   <tbody id="historyTable"></tbody>
 </table>
+
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbyTKQ0uTNvOQLZrSTBXc17sb8Wiytenx46ufjGB95fHQN-YC6C-ltomiW5NpDYqyNEB0A/exec";
@@ -108,34 +113,27 @@ function renderTemp() {
 
 function renderHistory() {
   historyTable.innerHTML = "";
-  history.forEach((g, idx) => {
+
+  history.forEach(g => {
+    const typeText =
+      g.items[0].sign === "+" ? "Nhập" : "Xuất";
+
+    // gộp ghi chú (lấy từ bảng nhớ tạm đã lưu)
+    const detail = g.items
+      .map(i => i.note)
+      .filter(n => n && n.trim() !== "")
+      .join(" | ");
+
     historyTable.innerHTML += `
-      <tr class="history-group" onclick="toggle(${idx})">
-        <td>${g.time}</td>
-        <td>${g.items.length} dòng</td>
+      <tr>
+        <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
+        <td>${typeText}</td>
+        <td>${detail || ""}</td>
       </tr>
-      <tr id="h${idx}" style="display:none">
-        <td colspan="2">
-          <table width="100%">
-            ${g.items.map((i,j)=>`
-              <tr class="history-detail">
-                <td>${i.name}</td>
-                <td>
-                  <input type="number" value="${i.qty}"
-                    onchange="history[${idx}].items[${j}].qty=this.value">
-                </td>
-                <td>${i.sign}</td>
-              </tr>`).join("")}
-            <tr>
-              <td colspan="3">
-                <button onclick="saveHistory(${idx})">💾 Lưu chỉnh sửa</button>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>`;
+    `;
   });
 }
+
 
 function toggle(i){
   const el = document.getElementById("h"+i);
@@ -190,3 +188,4 @@ async function saveHistory(i){
 
 </body>
 </html>
+
