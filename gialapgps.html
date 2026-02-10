@@ -5,16 +5,81 @@
 <title>Quản lý vật tư</title>
 
 <style>
-body { font-family: Arial; padding: 20px; }
+body { font-family: Arial; padding: 20px; background:#fafafa; }
 .container { display: flex; gap: 20px; }
-.box { flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 6px; }
+.box { flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 8px; background:#fff; }
+
+h3 { margin-top: 0; }
+
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
 th { background: #eee; }
-button { cursor: pointer; }
+
+button { cursor: pointer; padding:8px 12px; border-radius:6px; border:none; }
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 6px;
+}
+
+/* ====== NHẬP / XUẤT BUTTON ====== */
+.type-box {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.type-btn {
+  flex: 1;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 15px 0;
+  border-radius: 10px;
+  opacity: 0.4;
+}
+
+.type-btn.active {
+  opacity: 1;
+}
+
+.type-in {
+  background: #d4f8d4;
+  color: #006400;
+}
+
+.type-out {
+  background: #ffd6d6;
+  color: #8b0000;
+}
+
+/* ====== TEMP LIST ====== */
+.badge-in {
+  background:#d4f8d4;
+  color:#006400;
+  padding:4px 8px;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+.badge-out {
+  background:#ffd6d6;
+  color:#8b0000;
+  padding:4px 8px;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+.qty {
+  font-weight:bold;
+  font-size:18px;
+}
+
+/* ====== HISTORY ====== */
 .history-group { background:#f6f6f6; cursor:pointer; }
 .history-detail { background:#fffbe6; }
-input { width: 100%; }
+
 </style>
 </head>
 
@@ -25,31 +90,38 @@ input { width: 100%; }
 <div class="container">
   <div class="box">
     <h3>🔄 Nhập / Xuất</h3>
+
     <select id="itemSelect"></select>
-    <select id="sign">
-      <option value="+">Nhập</option>
-      <option value="-">Xuất</option>
-    </select>
+
+    <!-- BUTTON NHẬP XUẤT -->
+    <div class="type-box">
+      <button class="type-btn type-in active" onclick="setType('+')">⬆️ NHẬP</button>
+      <button class="type-btn type-out" onclick="setType('-')">⬇️ XUẤT</button>
+    </div>
+
     <input id="qty" type="number" placeholder="Số lượng">
     <input id="noteLine" placeholder="Ghi chú dòng">
-    <button onclick="addTemp()">Thêm tạm</button>
+    <button style="margin-top:10px;background:#007bff;color:#fff" onclick="addTemp()">➕ Thêm vào danh sách tạm</button>
   </div>
 
   <div class="box">
     <h3>📋 Danh sách tạm</h3>
+
     <table>
       <thead>
         <tr>
           <th>Vật tư</th>
-          <th>SL</th>
+          <th>Loại</th>
+          <th>Số lượng</th>
           <th>Ghi chú</th>
           <th>Xóa</th>
         </tr>
       </thead>
       <tbody id="tempTable"></tbody>
     </table>
+
     <input id="logNote" placeholder="Ghi chú chung">
-    <button onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
+    <button style="margin-top:10px;background:#28a745;color:#fff" onclick="saveToSheet()">💾 LƯU VÀO KHO</button>
   </div>
 </div>
 
@@ -83,13 +155,21 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxduYVlwx2reJLXTD-mvCHy
 let inventory = [];
 let temp = [];
 let history = [];
+let currentSign = "+"; // MẶC ĐỊNH NHẬP
 
 window.onload = () => {
   loadInventory();
   loadHistory();
 };
 
-/* ================= INVENTORY ================= */
+/* ===== TYPE ===== */
+function setType(sign){
+  currentSign = sign;
+  document.querySelectorAll(".type-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelector(sign==="+"?".type-in":".type-out").classList.add("active");
+}
+
+/* ===== INVENTORY ===== */
 function renderInventory() {
   itemSelect.innerHTML = "";
   mainTable.innerHTML = "";
@@ -99,79 +179,36 @@ function renderInventory() {
   });
 }
 
-/* ================= TEMP ================= */
+/* ===== TEMP ===== */
 function renderTemp() {
   tempTable.innerHTML = "";
   temp.forEach((t, i) => {
     tempTable.innerHTML += `
       <tr>
         <td>${t.name}</td>
-        <td>${t.sign === "+" ? "Nhập" : "Xuất"} ${t.qty}</td>
+        <td>${t.sign==="+" ? `<span class="badge-in">NHẬP</span>` : `<span class="badge-out">XUẤT</span>`}</td>
+        <td class="qty">${t.qty}</td>
         <td>${t.note || ""}</td>
         <td><button onclick="temp.splice(${i},1);renderTemp()">❌</button></td>
       </tr>`;
   });
 }
 
-/* ================= HISTORY ================= */
+/* ===== HISTORY ===== */
 function renderHistory() {
   historyTable.innerHTML = "";
-
-  history.forEach((g, idx) => {
-    const typeText = g.items[0].type;
-    const detail = g.items
-      .map(i => i.note)
-      .filter(n => n && n.trim() !== "")
-      .join(" | ");
-
+  history.forEach(g => {
+    const detail = g.items.map(i=>i.note).filter(Boolean).join(" | ");
     historyTable.innerHTML += `
-      <tr class="history-group" onclick="toggle(${idx})">
+      <tr>
         <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-        <td>${typeText}</td>
-        <td>${detail || ""}</td>
-      </tr>
-
-      <tr id="h${idx}" style="display:none">
-        <td colspan="3">
-          <table width="100%">
-            <tr>
-              <th>Vật tư</th>
-              <th>Số lượng</th>
-              <th>Ghi chú</th>
-            </tr>
-
-            ${g.items.map((it,j)=>`
-              <tr class="history-detail">
-                <td>${it.name}</td>
-                <td>
-                  <input type="number" value="${it.qty}"
-                    onchange="history[${idx}].items[${j}].qty = Number(this.value)">
-                </td>
-                <td>
-                  <input value="${it.note || ''}"
-                    onchange="history[${idx}].items[${j}].note = this.value">
-                </td>
-              </tr>
-            `).join("")}
-
-            <tr>
-              <td colspan="3">
-                <button onclick="saveHistory(${idx})">💾 Lưu chỉnh sửa</button>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    `;
+        <td>${g.items[0].type}</td>
+        <td>${detail}</td>
+      </tr>`;
   });
 }
 
-function toggle(i){
-  const el = document.getElementById("h"+i);
-  el.style.display = el.style.display === "none" ? "" : "none";
-}
-
-/* ================= LOAD ================= */
+/* ===== LOAD ===== */
 async function loadInventory(){
   inventory = await fetch(API_URL+"?action=getInventory").then(r=>r.json());
   renderInventory();
@@ -182,16 +219,18 @@ async function loadHistory(){
   renderHistory();
 }
 
-/* ================= ACTION ================= */
+/* ===== ACTION ===== */
 function addTemp(){
   const idx = itemSelect.value;
   if(qty.value<=0) return alert("Sai số lượng");
+
   temp.push({
     name: inventory[idx].name,
-    sign: sign.value,
+    sign: currentSign,
     qty: Number(qty.value),
     note: noteLine.value
   });
+
   qty.value=""; noteLine.value="";
   renderTemp();
 }
@@ -199,28 +238,22 @@ function addTemp(){
 async function saveToSheet(){
   if(!temp.length) return;
 
-  const typeText = sign.value === "+" ? "Nhập" : "Xuất";
-
   await fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({
-      type: typeText,
+      type: currentSign==="+"?"Nhập":"Xuất",
       note: logNote.value,
       items: temp
     })
   });
 
-  temp=[]; 
+  temp=[];
   logNote.value="";
   await loadInventory();
   await loadHistory();
-  alert("✅ Đã lưu & cập nhật lịch sử");
+  alert("✅ Đã lưu & cập nhật kho");
 }
-
 </script>
 
 </body>
 </html>
-
-
-
