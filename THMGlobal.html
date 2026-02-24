@@ -10,16 +10,13 @@ body{
   background:#f3f6fb;
   padding:20px;
 }
-
 h1{text-align:center}
 
-/* ===== LAYOUT ===== */
 .container{
   display:flex;
   gap:24px;
   flex-wrap:wrap;
 }
-
 .box{
   background:#fff;
   padding:24px;
@@ -28,12 +25,9 @@ h1{text-align:center}
   flex:1;
   min-width:320px;
 }
-
-/* ===== LOGIN ===== */
 .role-box{text-align:center}
 .role-box button{font-size:22px;padding:18px;margin-top:16px}
 
-/* ===== INPUT ===== */
 select,input,textarea{
   width:100%;
   font-size:18px;
@@ -42,16 +36,13 @@ select,input,textarea{
   border-radius:10px;
   border:2px solid #ddd;
 }
-
 .qty-input{
   width:80px;
   text-align:center;
   font-weight:bold;
 }
-
 .note-textarea{resize:none}
 
-/* ===== BUTTON ===== */
 button{
   border:none;
   border-radius:10px;
@@ -59,9 +50,7 @@ button{
   color:#fff;
   cursor:pointer;
 }
-
 button:hover{background:#0056b3}
-
 .btn-center{text-align:center}
 
 .btn-compact{
@@ -76,18 +65,14 @@ button:hover{background:#0056b3}
   color:#fff;
   margin-top:10px;
 }
-
 .btn-compact:hover{background:#0b5ed7}
 
-/* ===== TABLE ===== */
 table{width:100%;border-collapse:collapse}
-
 th{
   background:#007bff;
   color:white;
   padding:12px;
 }
-
 td{
   padding:12px;
   text-align:center;
@@ -97,71 +82,6 @@ td{
 .temp-import{background:#e8fff1}
 .temp-export{background:#ffecec}
 
-/* ===== HISTORY ===== */
-.history-group{
-  background:#f0f4ff;
-  cursor:pointer;
-  font-weight:bold;
-}
-
-.history-group:hover{background:#dbe4ff}
-
-/* ===== HISTORY DETAIL ===== */
-.history-detail{
-  background:#f5f6f8;
-  padding:16px;
-  font-size:14px;
-  border-left:5px solid #007bff;
-  animation:fadeIn .25s ease;
-}
-
-.history-detail table{
-  width:92%;
-  margin-left:24px;
-  background:#f9fafb;
-  border-radius:8px;
-}
-
-.history-detail th{
-  background:#e9ecef;
-  color:#555;
-  font-size:12px;
-  padding:8px;
-}
-
-.history-detail td{
-  font-size:13px;
-  padding:8px;
-}
-
-/* highlight */
-.changed{
-  background:#fff9db !important;
-  border-color:#ffd43b !important;
-}
-
-/* edit button */
-.edit-actions{text-align:right;padding-top:8px}
-
-.btn-edit{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 14px;
-  font-size:13px;
-  background:#f1f3f5;
-  color:#555;
-  border:1px solid #ced4da;
-  border-radius:6px;
-}
-
-.btn-edit:hover{background:#e9ecef;color:#222}
-
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(-5px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
 .hidden{display:none}
 </style>
 </head>
@@ -170,7 +90,7 @@ td{
 
 <h1>VẬT TƯ KHO PHÚ MỸ</h1>
 
-<!-- ===== LOGIN ===== -->
+<!-- LOGIN -->
 <div id="roleSelect" class="container">
   <div class="box role-box">
     <h2>ADMIN</h2>
@@ -185,19 +105,24 @@ td{
   </div>
 </div>
 
-<!-- ===== ADMIN ===== -->
+<!-- ADMIN -->
 <div id="adminArea" class="hidden">
 <div class="container">
 
 <div class="box">
 <h3>🔄 NHẬP / XUẤT</h3>
+
+<select id="itemCategory"></select>
 <select id="itemSelect"></select>
+
 <select id="sign">
 <option value="+">➕ NHẬP</option>
 <option value="-">➖ XUẤT</option>
 </select>
+
 <input id="qty" type="number" class="qty-input" placeholder="SL">
 <textarea id="noteLine" placeholder="Ghi chú"></textarea>
+
 <div class="btn-center">
 <button class="btn-compact" onclick="addTemp()">➕ Thêm vào DS tạm</button>
 </div>
@@ -207,11 +132,13 @@ td{
 <h3>📋 DANH SÁCH TẠM</h3>
 <table>
 <thead>
-<tr><th>Vật tư</th><th>Nhập/Xuất</th><th>Ghi chú</th><th>Xóa</th></tr>
+<tr><th>Vật tư</th><th>Loại</th><th>Nhập/Xuất</th><th>Xóa</th></tr>
 </thead>
 <tbody id="tempTable"></tbody>
 </table>
+
 <textarea id="logNote" placeholder="Ghi chú chung"></textarea>
+
 <div class="btn-center">
 <button class="btn-compact" onclick="saveToSheet()">💾 Lưu vào kho</button>
 </div>
@@ -220,27 +147,28 @@ td{
 </div>
 </div>
 
-<!-- ===== VIEW ===== -->
+<!-- VIEW -->
 <div id="viewArea" class="hidden">
+
 <h3>VẬT TƯ HIỆN TẠI</h3>
+
+<select id="categoryFilter" onchange="renderInventoryTable()">
+<option value="all">-- TẤT CẢ --</option>
+</select>
+
 <table>
-<thead><tr><th>Vật tư</th><th>Số lượng</th></tr></thead>
+<thead><tr><th>Vật tư</th><th>Số lượng</th><th>Loại</th></tr></thead>
 <tbody id="mainTable"></tbody>
 </table>
 
-<h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
-<table>
-<thead><tr><th>Thời gian</th><th>Loại</th><th>Chi tiết</th></tr></thead>
-<tbody id="historyTable"></tbody>
-</table>
 </div>
 
 <script>
-const API_URL="https://script.google.com/macros/s/AKfycbxduYVlwx2reJLXTD-mvCHyKshrXZvHWxkK-gWcf6Iy74MRhheN4TwX2XLUzDD6rhMeMQ/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbzbJev1CRg98jCAKuoSGulU5FdPaReC4zWNAMHytX6Iw_u8C0dti4GK3Lxphfar62dLRQ/exec";
 
-let inventory=[],temp=[],history=[],isAdmin=false;
+let inventory=[],temp=[],isAdmin=false;
 
-/* ===== LOGIN ===== */
+/* LOGIN */
 function loginAdmin(){
   if(adminPass.value!=="1234") return alert("Sai mật khẩu");
   isAdmin=true;
@@ -249,7 +177,6 @@ function loginAdmin(){
   viewArea.classList.remove("hidden");
   init();
 }
-
 function loginUser(){
   isAdmin=false;
   roleSelect.classList.add("hidden");
@@ -257,137 +184,122 @@ function loginUser(){
   init();
 }
 
-/* ===== INIT ===== */
+/* INIT */
 async function init(){
   await loadInventory();
-  await loadHistory();
 }
 
-/* ===== INVENTORY ===== */
+/* LOAD INVENTORY */
+async function loadInventory(){
+  inventory=await fetch(API_URL+"?action=getInventory").then(r=>r.json());
+  renderInventory();
+}
+
+/* RENDER */
 function renderInventory(){
-  if(isAdmin){
-    itemSelect.innerHTML="";
-    inventory.forEach((i,idx)=>{
-      itemSelect.innerHTML+=`<option value="${idx}">${i.name}</option>`;
-    });
-  }
-  mainTable.innerHTML="";
-  inventory.forEach(i=>{
-    mainTable.innerHTML+=`<tr><td>${i.name}</td><td>${i.qty}</td></tr>`;
+
+  const categories=[...new Set(inventory.map(i=>i.category||"Khác"))];
+
+  // FILTER DROPDOWN
+  categoryFilter.innerHTML=`<option value="all">-- TẤT CẢ --</option>`;
+  categories.forEach(c=>{
+    categoryFilter.innerHTML+=`<option value="${c}">${c}</option>`;
   });
+
+ if(isAdmin){
+
+  itemCategory.innerHTML="";
+  categories.forEach(c=>{
+    itemCategory.innerHTML+=`<option value="${c}">${c}</option>`;
+  });
+
+  itemCategory.onchange=()=>{
+    // 🔥 Đồng bộ xuống bảng dưới
+    categoryFilter.value = itemCategory.value;
+
+    renderItemSelect();
+    renderInventoryTable();
+  };
+
+  renderItemSelect();
 }
 
-/* ===== TEMP ===== */
+  let filter=categoryFilter.value;
+
+  mainTable.innerHTML="";
+  inventory
+    .filter(i=>filter==="all"||i.category===filter)
+    .forEach(i=>{
+      mainTable.innerHTML+=`
+      <tr>
+        <td>${i.name}</td>
+        <td>${i.qty}</td>
+        <td>${i.category}</td>
+      </tr>`;
+    });
+}
+
+function renderItemSelect(){
+  let selectedCat=itemCategory.value;
+  itemSelect.innerHTML="";
+  inventory
+    .filter(i=>i.category===selectedCat)
+    .forEach((i,idx)=>{
+      itemSelect.innerHTML+=`<option value="${inventory.indexOf(i)}">${i.name}</option>`;
+    });
+}
+
+/* TEMP */
+function addTemp(){
+  const selected=inventory[itemSelect.value];
+  temp.push({
+    name:selected.name,
+    category:selected.category,
+    sign:sign.value,
+    qty:+qty.value
+  });
+  qty.value="";
+  renderTemp();
+}
+
 function renderTemp(){
-  if(!isAdmin) return;
   tempTable.innerHTML="";
   temp.forEach((t,i)=>{
     tempTable.innerHTML+=`
     <tr class="${t.sign==='+'?'temp-import':'temp-export'}">
       <td>${t.name}</td>
-      <td>${t.sign==='+'?'NHẬP':'XUẤT'}<br><b>${t.qty}</b></td>
-      <td>${t.note||''}</td>
+      <td>${t.category}</td>
+      <td>${t.sign==='+'?'NHẬP':'XUẤT'} ${t.qty}</td>
       <td><button onclick="temp.splice(${i},1);renderTemp()">❌</button></td>
     </tr>`;
   });
 }
 
-/* ===== HISTORY ===== */
-function renderHistory(){
-  historyTable.innerHTML="";
-  history.forEach((g,idx)=>{
-    historyTable.innerHTML+=`
-    <tr class="history-group" onclick="toggle(${idx})">
-      <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-      <td>${g.items[0].type}</td>
-      <td>${g.items.map(i=>i.name+": "+i.qty).join(" | ")}</td>
-    </tr>
-
-    <tr id="h${idx}" style="display:none">
-      <td colspan="3" class="history-detail">
-        <table>
-          <tr><th>Vật tư</th><th>Số lượng</th><th>Ghi chú</th></tr>
-
-          ${g.items.map((it,j)=>`
-          <tr>
-            <td>${it.name}</td>
-            <td>
-              ${
-                isAdmin
-                ? `<input class="qty-input" value="${it.qty}"
-                   onchange="this.classList.add('changed');history[${idx}].items[${j}].qty=+this.value">`
-                : `<b>${it.qty}</b>`
-              }
-            </td>
-            <td>
-              ${
-                isAdmin
-                ? `<textarea onchange="this.classList.add('changed');history[${idx}].items[${j}].note=this.value">${it.note||""}</textarea>`
-                : (it.note||"")
-              }
-            </td>
-          </tr>`).join("")}
-
-          ${
-            isAdmin
-            ? `<tr>
-                <td colspan="3" class="edit-actions">
-                  <button class="btn-edit" onclick="saveHistory(${idx})">💾 Lưu chỉnh sửa</button>
-                </td>
-              </tr>`
-            : ``
-          }
-        </table>
-      </td>
-    </tr>`;
-  });
-}
-
-function toggle(i){
-  const el=document.getElementById("h"+i);
-  el.style.display=el.style.display==="none"?"":"none";
-}
-
-/* ===== LOAD ===== */
-async function loadInventory(){
-  inventory=await fetch(API_URL+"?action=getInventory").then(r=>r.json());
-  renderInventory();
-}
-async function loadHistory(){
-  history=await fetch(API_URL+"?action=getHistory").then(r=>r.json());
-  renderHistory();
-}
-
-/* ===== ADMIN ACTION ===== */
-function addTemp(){
-  temp.push({
-    name:inventory[itemSelect.value].name,
-    sign:sign.value,
-    qty:+qty.value,
-    note:noteLine.value
-  });
-  qty.value="";noteLine.value="";
-  renderTemp();
-}
-
+/* SAVE */
 async function saveToSheet(){
   await fetch(API_URL,{
     method:"POST",
-    body:JSON.stringify({items:temp,note:logNote.value})
+    body:JSON.stringify({items:temp})
   });
-  temp=[];logNote.value="";
+  temp=[];
   await init();
   alert("Đã lưu");
 }
+function renderInventoryTable(){
+  let filter = categoryFilter.value;
 
-async function saveHistory(i){
-  if(!confirm("Lưu chỉnh sửa?"))return;
-  await fetch(API_URL,{
-    method:"POST",
-    body:JSON.stringify({action:"editHistory",group:history[i]})
-  });
-  await init();
-  alert("Đã cập nhật");
+  mainTable.innerHTML="";
+
+  inventory
+    .filter(i=>filter==="all"||i.category===filter)
+    .forEach(i=>{
+      mainTable.innerHTML+=`
+      <tr>
+        <td>${i.name}</td>
+        <td>${i.qty}</td>
+        <td>${i.category}</td>
+      </tr>`;
+    });
 }
 </script>
 
