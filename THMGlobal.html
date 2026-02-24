@@ -281,20 +281,35 @@ async function saveToSheet(){
   alert("Đã lưu");
 }
 
-/* HISTORY */
+/* =======================
+   HISTORY
+======================= */
+
 function renderHistory(){
-  historyTable.innerHTML="";
+  historyTable.innerHTML = "";
 
-  history.forEach((g,idx)=>{
+  history.forEach((g, idx) => {
 
-    const summary = g.items
-      .map(i => `${i.name} (${i.qty})`)
-      .join(" | ");
+    if (!g.items || !g.items.length) return;
 
-    historyTable.innerHTML+=`
+    // Xác định loại (Nhập / Xuất)
+    const actionType = g.items[0].type || "";
+
+    const actionLabel = actionType === "Nhập"
+      ? `<span style="color:green;font-weight:bold">NHẬP</span>`
+      : `<span style="color:red;font-weight:bold">XUẤT</span>`;
+
+    // Tạo danh sách vật tư + số lượng
+    const itemList = g.items
+      .map(item => `${item.name} (${item.qty})`)
+      .join(", ");
+
+    const label = `${actionLabel}: ${itemList}`;
+
+    historyTable.innerHTML += `
     <tr class="history-group" onclick="toggle(${idx})">
       <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-      <td>${summary}</td>
+      <td>${label}</td>
     </tr>
 
     <tr id="h${idx}" style="display:none">
@@ -307,7 +322,7 @@ function renderHistory(){
             <th>Ghi chú</th>
           </tr>
 
-          ${g.items.map((it,j)=>`
+          ${g.items.map((it, j) => `
           <tr>
             <td>${it.name}</td>
             <td>${it.category}</td>
@@ -326,9 +341,9 @@ function renderHistory(){
               ${
                 isAdmin
                 ? `<input
-                     value="${it.note||""}"
+                     value="${it.note || ""}"
                      onchange="history[${idx}].items[${j}].note=this.value">`
-                : (it.note||"")
+                : (it.note || "")
               }
             </td>
           </tr>
@@ -351,7 +366,6 @@ function renderHistory(){
     </tr>`;
   });
 }
-
 function toggle(i){
   const el=document.getElementById("h"+i);
   el.style.display=el.style.display==="none"?"":"none";
@@ -370,4 +384,3 @@ async function saveHistory(i){
 
 </body>
 </html>
-
