@@ -201,10 +201,14 @@ function renderInventory(){
 
   const categories=[...new Set(inventory.map(i=>i.category||"Khác"))];
 
-  categoryFilter.innerHTML=`<option value="all">-- TẤT CẢ --</option>`;
-  categories.forEach(c=>{
-    categoryFilter.innerHTML+=`<option value="${c}">${c}</option>`;
-  });
+categoryFilter.innerHTML = "";
+
+categories.forEach(c=>{
+  categoryFilter.innerHTML += `
+    <option value="${c}" ${c === "Sắt" ? "selected" : ""}>
+      ${c}
+    </option>`;
+});
 
   if(isAdmin){
     itemCategory.innerHTML="";
@@ -223,7 +227,7 @@ function renderInventoryTable(){
   let filter=categoryFilter.value;
   mainTable.innerHTML="";
   inventory
-    .filter(i=>filter==="all"||i.category===filter)
+    .filter(i=>i.category===filter)
     .forEach(i=>{
       mainTable.innerHTML+=`
       <tr>
@@ -384,3 +388,4 @@ async function saveHistory(i){
 
 </body>
 </html>
+
