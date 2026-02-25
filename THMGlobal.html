@@ -37,9 +37,10 @@ select,input,textarea{
   border:2px solid #ddd;
 }
 .qty-input{
-  width:80px;
+  width:140px;
   text-align:center;
   font-weight:bold;
+  font-size:18px;
 }
 
 button{
@@ -81,6 +82,35 @@ td{
 }
 
 .hidden{display:none}
+.admin-mini{
+  position:fixed;
+  top:15px;
+  right:20px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  background:white;
+  padding:8px 12px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+  z-index:999;
+}
+
+.admin-mini input{
+  width:140px;
+  padding:6px 8px;
+  font-size:14px;
+  margin:0;
+}
+
+.admin-mini button{
+  padding:6px 10px;
+  font-size:14px;
+}
+#noteLine{
+  height:50px;
+  resize:none;
+}
 </style>
 </head>
 
@@ -89,18 +119,13 @@ td{
 <h1>VẬT TƯ KHO PHÚ MỸ</h1>
 
 <!-- LOGIN -->
-<div id="roleSelect" class="container">
-  <div class="box role-box">
-    <h2>ADMIN</h2>
-    <input id="adminPass" type="password" placeholder="Mật khẩu admin">
-    <button onclick="loginAdmin()">ĐĂNG NHẬP</button>
-  </div>
-
-  <div class="box role-box">
-    <h2>USER</h2>
-    <button onclick="loginUser()">VÀO XEM</button>
-  </div>
+<!-- LOGIN MINI -->
+<div id="roleSelect" class="admin-mini">
+  <input id="adminPass" type="password" placeholder="Mật khẩu">
+  <button onclick="loginAdmin()">Đăng nhập</button>
 </div>
+
+  </div>
 
 <!-- ADMIN -->
 <div id="adminArea" class="hidden">
@@ -139,8 +164,7 @@ td{
 </div>
 
 <!-- VIEW -->
-<div id="viewArea" class="hidden">
-
+<div id="viewArea">
 <h3>VẬT TƯ HIỆN TẠI</h3>
 
 <select id="categoryFilter" onchange="renderInventoryTable()">
@@ -168,10 +192,12 @@ let inventory=[],temp=[],history=[],isAdmin=false;
 /* LOGIN */
 function loginAdmin(){
   if(adminPass.value!=="1234") return alert("Sai mật khẩu");
-  isAdmin=true;
-  roleSelect.classList.add("hidden");
+
+  isAdmin = true;
+
+  document.getElementById("roleSelect").style.display = "none"; // Ẩn luôn ô login
   adminArea.classList.remove("hidden");
-  viewArea.classList.remove("hidden");
+
   init();
 }
 function loginUser(){
@@ -384,6 +410,10 @@ async function saveHistory(i){
   await init();
   alert("Đã cập nhật");
 }
+window.onload = function() {
+  viewArea.classList.remove("hidden");
+  init();
+};
 </script>
 
 </body>
