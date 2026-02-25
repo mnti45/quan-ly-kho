@@ -111,11 +111,21 @@ td{
   height:50px;
   resize:none;
 }
+#loadingBar{
+  position:fixed;
+  top:0;
+  left:0;
+  width:0%;
+  height:4px;
+  background:#00c853;
+  z-index:9999;
+  transition:width 0.3s ease;
+}
 </style>
 </head>
 
 <body>
-
+<div id="loadingBar"></div>
 <h1>VẬT TƯ KHO PHÚ MỸ</h1>
 
 <!-- LOGIN -->
@@ -158,6 +168,7 @@ td{
 </table>
 
 <button onclick="saveToSheet()">Lưu vào kho</button>
+
 </div>
 
 </div>
@@ -189,59 +200,67 @@ const API_URL="https://script.google.com/macros/s/AKfycbzV12AisfdwandC9ire8KXwzf
 
 let inventory=[],temp=[],history=[],isAdmin=false;
 
-/* LOGIN */
+/* ================= LOADING BAR ================= */
+
+function startLoading(){
+  const bar = document.getElementById("loadingBar");
+  bar.style.width = "30%";
+  setTimeout(()=> bar.style.width="60%", 200);
+  setTimeout(()=> bar.style.width="85%", 500);
+}
+
+function stopLoading(){
+  const bar = document.getElementById("loadingBar");
+  bar.style.width = "100%";
+  setTimeout(()=>{ bar.style.width = "0%"; },400);
+}
+
+/* ================= LOGIN ================= */
+
 function loginAdmin(){
   if(adminPass.value!=="1234") return alert("Sai mật khẩu");
 
   isAdmin = true;
-
-  document.getElementById("roleSelect").style.display = "none"; // Ẩn luôn ô login
+  document.getElementById("roleSelect").style.display = "none";
   adminArea.classList.remove("hidden");
-
-  init();
-}
-function loginUser(){
-  roleSelect.classList.add("hidden");
-  viewArea.classList.remove("hidden");
   init();
 }
 
-/* INIT */
+/* ================= INIT ================= */
+
 async function init(){
   await loadInventory();
   await loadHistory();
 }
 
-/* LOAD */
+/* ================= LOAD ================= */
+
 async function loadInventory(){
   inventory=await fetch(API_URL+"?action=getInventory").then(r=>r.json());
   renderInventory();
 }
+
 async function loadHistory(){
   history=await fetch(API_URL+"?action=getHistory").then(r=>r.json());
   renderHistory();
 }
 
-/* INVENTORY */
-function renderInventory(){
+/* ================= INVENTORY ================= */
 
+function renderInventory(){
   const categories=[...new Set(inventory.map(i=>i.category||"Khác"))];
 
-categoryFilter.innerHTML = "";
-
-categories.forEach(c=>{
-  categoryFilter.innerHTML += `
-    <option value="${c}" ${c === "Sắt" ? "selected" : ""}>
-      ${c}
-    </option>`;
-});
+  categoryFilter.innerHTML="";
+  categories.forEach(c=>{
+    categoryFilter.innerHTML += `
+      <option value="${c}" ${c==="Sắt"?"selected":""}>${c}</option>`;
+  });
 
   if(isAdmin){
     itemCategory.innerHTML="";
     categories.forEach(c=>{
       itemCategory.innerHTML+=`<option value="${c}">${c}</option>`;
     });
-
     itemCategory.onchange=renderItemSelect;
     renderItemSelect();
   }
@@ -270,11 +289,13 @@ function renderItemSelect(){
   inventory
     .filter(i=>i.category===selectedCat)
     .forEach(i=>{
-      itemSelect.innerHTML+=`<option value="${inventory.indexOf(i)}">${i.name}</option>`;
+      itemSelect.innerHTML+=
+      `<option value="${inventory.indexOf(i)}">${i.name}</option>`;
     });
 }
 
-/* TEMP */
+/* ================= TEMP ================= */
+
 function addTemp(){
   const selected=inventory[itemSelect.value];
   temp.push({
@@ -284,9 +305,11 @@ function addTemp(){
     qty:+qty.value,
     note:noteLine.value
   });
-  qty.value="";noteLine.value="";
+  qty.value="";
+  noteLine.value="";
   renderTemp();
 }
+
 function renderTemp(){
   tempTable.innerHTML="";
   temp.forEach((t,i)=>{
@@ -300,46 +323,47 @@ function renderTemp(){
   });
 }
 
-/* SAVE */
+/* ================= SAVE TO SHEET ================= */
+
 async function saveToSheet(){
+  if(!temp.length) return alert("Chưa có dữ liệu");
+
+  startLoading();
+
   await fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({items:temp})
   });
+
   temp=[];
   await init();
+
+  stopLoading();
   alert("Đã lưu");
 }
 
-/* =======================
-   HISTORY
-======================= */
+/* ================= HISTORY ================= */
 
 function renderHistory(){
-  historyTable.innerHTML = "";
+  historyTable.innerHTML="";
 
-  history.forEach((g, idx) => {
+  history.forEach((g, idx)=>{
 
-    if (!g.items || !g.items.length) return;
+    if(!g.items || !g.items.length) return;
 
-    // Xác định loại (Nhập / Xuất)
     const actionType = g.items[0].type || "";
-
-    const actionLabel = actionType === "Nhập"
+    const actionLabel = actionType==="Nhập"
       ? `<span style="color:green;font-weight:bold">NHẬP</span>`
       : `<span style="color:red;font-weight:bold">XUẤT</span>`;
 
-    // Tạo danh sách vật tư + số lượng
     const itemList = g.items
       .map(item => `${item.name} (${item.qty})`)
       .join(", ");
 
-    const label = `${actionLabel}: ${itemList}`;
-
-    historyTable.innerHTML += `
+    historyTable.innerHTML+=`
     <tr class="history-group" onclick="toggle(${idx})">
       <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
-      <td>${label}</td>
+      <td>${actionLabel}: ${itemList}</td>
     </tr>
 
     <tr id="h${idx}" style="display:none">
@@ -352,35 +376,26 @@ function renderHistory(){
             <th>Ghi chú</th>
           </tr>
 
-          ${g.items.map((it, j) => `
+          ${g.items.map((it,j)=>`
           <tr>
             <td>${it.name}</td>
             <td>${it.category}</td>
-
             <td>
-              ${
-                isAdmin
+              ${isAdmin
                 ? `<input class="qty-input"
-                     value="${it.qty}"
-                     onchange="history[${idx}].items[${j}].qty=+this.value">`
-                : `<b>${it.qty}</b>`
-              }
+                   value="${it.qty}"
+                   onchange="history[${idx}].items[${j}].qty=+this.value">`
+                : `<b>${it.qty}</b>`}
             </td>
-
             <td>
-              ${
-                isAdmin
-                ? `<input
-                     value="${it.note || ""}"
-                     onchange="history[${idx}].items[${j}].note=this.value">`
-                : (it.note || "")
-              }
+              ${isAdmin
+                ? `<input value="${it.note||""}"
+                   onchange="history[${idx}].items[${j}].note=this.value">`
+                : (it.note||"")}
             </td>
-          </tr>
-          `).join("")}
+          </tr>`).join("")}
 
-          ${
-            isAdmin
+          ${isAdmin
             ? `<tr>
                 <td colspan="4">
                   <button onclick="saveHistory(${idx})">
@@ -388,30 +403,37 @@ function renderHistory(){
                   </button>
                 </td>
               </tr>`
-            : ``
-          }
-
+            : ``}
         </table>
       </td>
     </tr>`;
   });
 }
+
 function toggle(i){
   const el=document.getElementById("h"+i);
   el.style.display=el.style.display==="none"?"":"none";
 }
 
 async function saveHistory(i){
-  if(!confirm("Lưu chỉnh sửa?"))return;
+  if(!confirm("Lưu chỉnh sửa?")) return;
+
+  startLoading();
+
   await fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({action:"editHistory",group:history[i]})
   });
+
   await init();
+
+  stopLoading();
   alert("Đã cập nhật");
 }
-window.onload = function() {
-  viewArea.classList.remove("hidden");
+
+/* ================= AUTO LOAD ================= */
+
+window.onload=function(){
   init();
 };
 </script>
