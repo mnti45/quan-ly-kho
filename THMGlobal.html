@@ -2,10 +2,13 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VẬT TƯ KHO PHÚ MỸ</title>
 
 <style>
-
+html {
+  -webkit-text-size-adjust: 100%;
+}
 body{
   font-family: Arial, sans-serif;
   background:#f3f6fb;
@@ -30,11 +33,11 @@ h1{text-align:center}
 
 select,input,textarea{
   width:100%;
-  font-size:18px;
-  padding:12px;
-  margin-bottom:14px;
-  border-radius:10px;
-  border:2px solid #ddd;
+  font-size:16px;
+  padding:10px 12px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1.5px solid #ddd;
 }
 .qty-input{
   width:140px;
@@ -45,11 +48,12 @@ select,input,textarea{
 
 button{
   border:none;
-  border-radius:10px;
+  border-radius:8px;
   background:#007bff;
   color:#fff;
   cursor:pointer;
-  padding:6px 14px;
+  padding:8px 14px;
+  font-size:15px;
 }
 button:hover{background:#0056b3}
 
@@ -188,6 +192,9 @@ td{
 </table>
 
 <h3>🕒 LỊCH SỬ NHẬP / XUẤT</h3>
+<button onclick="toggleHistoryView()" id="historyToggleBtn">
+  Xem tất cả
+</button>
 <table>
 <thead><tr><th>Thời gian</th><th>Chi tiết</th></tr></thead>
 <tbody id="historyTable"></tbody>
@@ -196,6 +203,7 @@ td{
 </div>
 
 <script>
+let showAllHistory = false;
 const API_URL="https://script.google.com/macros/s/AKfycbzV12AisfdwandC9ire8KXwzf9f9sOjZKDbEV0HZXY8f0xrJVI45P94mvoBmg-zhdblVA/exec";
 
 let inventory=[],temp=[],history=[],isAdmin=false;
@@ -344,12 +352,25 @@ async function saveToSheet(){
 
 /* ================= HISTORY ================= */
 
+/* ================= HISTORY ================= */
+
 function renderHistory(){
   historyTable.innerHTML="";
 
-  history.forEach((g, idx)=>{
+// Sắp xếp theo thời gian mới nhất trước
+let sortedHistory = [...history].sort((a,b)=>{
+  return new Date(b.time) - new Date(a.time);
+});
+
+let displayHistory = showAllHistory
+  ? sortedHistory
+  : sortedHistory.slice(0,5);
+
+  displayHistory.forEach((g)=>{
 
     if(!g.items || !g.items.length) return;
+
+    const realIndex = history.indexOf(g);
 
     const actionType = g.items[0].type || "";
     const actionLabel = actionType==="Nhập"
@@ -361,12 +382,12 @@ function renderHistory(){
       .join(", ");
 
     historyTable.innerHTML+=`
-    <tr class="history-group" onclick="toggle(${idx})">
+    <tr class="history-group" onclick="toggle(${realIndex})">
       <td>${new Date(g.time).toLocaleString("vi-VN")}</td>
       <td>${actionLabel}: ${itemList}</td>
     </tr>
 
-    <tr id="h${idx}" style="display:none">
+    <tr id="h${realIndex}" style="display:none">
       <td colspan="2" class="history-detail">
         <table>
           <tr>
@@ -384,13 +405,13 @@ function renderHistory(){
               ${isAdmin
                 ? `<input class="qty-input"
                    value="${it.qty}"
-                   onchange="history[${idx}].items[${j}].qty=+this.value">`
+                   onchange="history[${realIndex}].items[${j}].qty=+this.value">`
                 : `<b>${it.qty}</b>`}
             </td>
             <td>
               ${isAdmin
                 ? `<input value="${it.note||""}"
-                   onchange="history[${idx}].items[${j}].note=this.value">`
+                   onchange="history[${realIndex}].items[${j}].note=this.value">`
                 : (it.note||"")}
             </td>
           </tr>`).join("")}
@@ -398,7 +419,7 @@ function renderHistory(){
           ${isAdmin
             ? `<tr>
                 <td colspan="4">
-                  <button onclick="saveHistory(${idx})">
+                  <button onclick="saveHistory(${realIndex})">
                     Lưu chỉnh sửa
                   </button>
                 </td>
@@ -412,6 +433,7 @@ function renderHistory(){
 
 function toggle(i){
   const el=document.getElementById("h"+i);
+  if(!el) return;
   el.style.display=el.style.display==="none"?"":"none";
 }
 
@@ -431,6 +453,15 @@ async function saveHistory(i){
   alert("Đã cập nhật");
 }
 
+function toggleHistoryView(){
+  showAllHistory = !showAllHistory;
+
+  document.getElementById("historyToggleBtn").innerText =
+    showAllHistory ? "Thu gọn" : "Xem tất cả";
+
+  renderHistory();
+}
+
 /* ================= AUTO LOAD ================= */
 
 window.onload=function(){
@@ -440,4 +471,5 @@ window.onload=function(){
 
 </body>
 </html>
+
 
